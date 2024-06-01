@@ -33,25 +33,16 @@ RUN python3 -m pip install --upgrade pip
 ENV LANG C.UTF-8
 
 # Install dependencies (this is not necessary when using an *external* mini conda environment)
-RUN python3 -m pip install transformers==4.15.0 \
+RUN python3 -m pip install \
+    accelerate \
     wandb \
-    nltk \
-    numpy \
+    optuna \
+    torch \
     pandas \
     scikit-learn \
-    datasets \
-    huggingface_hub \
-    tqdm \
-    pypickle \
-    accelerate==0.30.1 \
-    peft \
-    trl \
-    bitsandbytes \
-    evaluate \
-    optuna \
-    rdkit-pypi \
-    plotly \
-    kaleido
+    transformers \
+    plotly
+
 
 # Add the user setup
 ARG USER_UID
@@ -69,9 +60,9 @@ RUN mkdir /home/$USER_NAME/.local
 RUN chown -R ${USER_UID}:${USER_GID} /home/$USER_NAME/
 
 # Set environment variable for Hugging Face cache directory
-ENV HF_HOME /projects/misinfo_sp/.cache/
+#ENV HF_HOME /projects/misinfo_sp/.cache/
 
 # Print the Hugging Face cache directory
-RUN echo $HF_HOME
+#RUN echo $HF_HOME
 
 CMD ["/bin/bash"]
