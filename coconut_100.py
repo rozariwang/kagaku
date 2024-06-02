@@ -28,7 +28,7 @@ model.to(device)  # Move the model to the specified device
 
 # Load and prepare data
 data = pd.read_csv('COCONUT_DB_absoluteSMILES.smi', sep=' ', header=None, names=['smiles', 'id'])
-data = data.sample(frac=0.1, random_state=42)  # Sampling a fraction 
+data = data.sample(frac=0.2, random_state=42)  # Sampling a fraction 
 
 def encode_smiles(smiles_list):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
