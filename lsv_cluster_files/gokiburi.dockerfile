@@ -41,7 +41,12 @@ RUN python3 -m pip install \
     pandas \
     scikit-learn \
     transformers \
-    plotly
+    plotly \
+    matplotlib \
+    rdkit-pypi \
+    json \
+    datasets
+
 
 
 # Add the user setup
