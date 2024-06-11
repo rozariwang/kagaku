@@ -15,8 +15,9 @@ FROM nvcr.io/nvidia/pytorch:24.01-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt update && \
-    apt install -y build-essential \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
     htop \
     gnupg \
     curl \
@@ -24,7 +25,8 @@ RUN apt update && \
     wget \
     vim \
     tmux && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Update pip
 RUN python3 -m pip install --upgrade pip
