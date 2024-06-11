@@ -15,8 +15,8 @@ FROM nvcr.io/nvidia/pytorch:24.01-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt update && \
-    apt install -y build-essential \
+RUN apt-get clean && apt-get update && apt-get install -y \
+    build-essential \
     htop \
     gnupg \
     curl \
@@ -44,7 +44,6 @@ RUN python3 -m pip install \
     plotly \
     matplotlib \
     rdkit-pypi \
-    json \
     datasets
 
 
