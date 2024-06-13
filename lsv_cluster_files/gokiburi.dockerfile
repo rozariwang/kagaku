@@ -15,7 +15,10 @@ FROM nvcr.io/nvidia/pytorch:24.01-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt-get clean && apt-get update && apt-get install -y \
+RUN echo 'DPkg::Post-Invoke {"";};' > /etc/apt/apt.conf.d/99fixbadproxy && \
+    apt-get clean && \
+    apt-get update && \
+    apt-get install -y \
     build-essential \
     htop \
     gnupg \
@@ -25,6 +28,7 @@ RUN apt-get clean && apt-get update && apt-get install -y \
     vim \
     tmux && \
     rm -rf /var/lib/apt/lists/*
+
 
 # Update pip
 RUN python3 -m pip install --upgrade pip
