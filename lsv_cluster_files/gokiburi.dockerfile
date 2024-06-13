@@ -15,9 +15,17 @@ FROM nvcr.io/nvidia/pytorch:24.01-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN echo 'APT::Update::Post-Invoke {"";};' > /etc/apt/apt.conf.d/99disablepostinvoke
+# Removing Post-Invoke scripts
+RUN echo '' > /etc/apt/apt.conf.d/90invoke
+
+# Cleaning up APT
 RUN apt-get clean
-RUN apt-get update
+RUN rm -rf /var/lib/apt/lists/* /var/cache/apt/*.bin
+
+# Updating APT
+RUN apt-get update -o APT::Update::Pre-Invoke::= -o APT::Update::Post-Invoke::=
+
+# Installing packages
 RUN apt-get install -y \
     build-essential \
     htop \
@@ -27,7 +35,9 @@ RUN apt-get install -y \
     wget \
     vim \
     tmux
-RUN rm -rf /var/lib/apt/lists/*
+
+# Cleanup
+RUN rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin
 
 # Update pip
 RUN python3 -m pip install --upgrade pip
