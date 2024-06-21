@@ -2,7 +2,8 @@
 # Everything with a leading # is a comment
 
 universe                = docker
-docker_image            = docker.lsv.uni-saarland.de/hhwang/kagaku
+# docker_image            = docker.lsv.uni-saarland.de/hhwang/kagaku
+docker_image            = docker.lsv.uni-saarland.de/dietrich/transformer:1
 initialdir              = /nethome/hhwang
 executable              = /nethome/hhwang/run_script_hhwang.sh # Change the script name
 output                  = /data/users/hhwang/logs/output_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
