@@ -110,6 +110,10 @@ def main(rank, world_size):
         report_to=None,
         local_rank=rank
     )
+    
+    # Create DataLoader with debugging print
+    train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
+    print(f"Train DataLoader length: {len(train_dataloader)}")
 
     class MyTrainer(Trainer):
         def on_epoch_end(self):
