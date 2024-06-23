@@ -83,6 +83,11 @@ def main(rank, world_size):
     encoded_train_data = encode_smiles(train_data, tokenizer)
     encoded_val_data = encode_smiles(val_data, tokenizer)
     encoded_test_data = encode_smiles(test_data, tokenizer)
+    
+    # Debug prints
+    print(f"Train data size: {len(train_data)}, Encoded train data shape: {encoded_train_data['input_ids'].shape}")
+    print(f"Validation data size: {len(val_data)}, Encoded validation data shape: {encoded_val_data['input_ids'].shape}")
+    print(f"Test data size: {len(test_data)}, Encoded test data shape: {encoded_test_data['input_ids'].shape}")
 
     train_dataset = CustomDataset(encoded_train_data)
     val_dataset = CustomDataset(encoded_val_data)
