@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 
 
-
 # Step 2: Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
