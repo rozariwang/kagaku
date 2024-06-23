@@ -26,7 +26,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
 
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.001, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.5, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -97,7 +97,7 @@ training_args = TrainingArguments(
     learning_rate=4.249894798853819e-05, # Learning rate from the hyperparameter optimization
     per_device_train_batch_size=16,      # Batch size from the hyperparameter optimization
     weight_decay=0.05704196058538424,    # Weight decay from the hyperparameter optimization
-    num_train_epochs=3,                  # Number of training epochs from the hyperparameter optimization
+    num_train_epochs=25,                  # Number of training epochs from the hyperparameter optimization
     report_to=None                       # Disable external reporting to keep training local
 )
 
@@ -145,5 +145,5 @@ torch.cuda.empty_cache()
 trainer.predict(test_dataset)
 
 # Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta")
-tokenizer.save_pretrained("./trained_chemberta")
+model.save_pretrained("./trained_chemberta_half_data")
+tokenizer.save_pretrained("./trained_chemberta_half_data")
