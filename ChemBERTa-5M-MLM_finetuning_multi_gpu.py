@@ -93,16 +93,10 @@ def main(rank, world_size):
     val_dataset = CustomDataset(encoded_val_data)
     test_dataset = CustomDataset(encoded_test_data)
 
-    '''
+    
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
     )
-    '''
-    
-    def simple_collate(batch):
-        print(f"Simple collate batch: {batch}")
-        return batch
-
 
     training_args = TrainingArguments(
         output_dir='./results',
@@ -136,7 +130,9 @@ def main(rank, world_size):
             torch.cuda.empty_cache()
             return predictions, label_ids, metrics
 
-    
+    def simple_collate(batch):
+        print("Received batch in collate_fn:", batch)
+        return torch.utils.data.dataloader.default_collate(batch)
 
     train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
     print(f"Train DataLoader length: {len(train_dataloader)}")
