@@ -1,2 +1,2 @@
-python python /nethome/hhwang/kagaku/coconut_100.py
+python python /nethome/hhwang/kagaku/ChemBERTa-5M-MLM_finetuning.py
 
