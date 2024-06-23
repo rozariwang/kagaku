@@ -84,8 +84,7 @@ def main(rank, world_size):
     encoded_train_data = encode_smiles(train_data, tokenizer)
     encoded_val_data = encode_smiles(val_data, tokenizer)
     encoded_test_data = encode_smiles(test_data, tokenizer)
-    
-    # Debug prints
+
     print(f"Train data size: {len(train_data)}, Encoded train data shape: {encoded_train_data['input_ids'].shape}")
     print(f"Validation data size: {len(val_data)}, Encoded validation data shape: {encoded_val_data['input_ids'].shape}")
     print(f"Test data size: {len(test_data)}, Encoded test data shape: {encoded_test_data['input_ids'].shape}")
@@ -93,14 +92,15 @@ def main(rank, world_size):
     train_dataset = CustomDataset(encoded_train_data)
     val_dataset = CustomDataset(encoded_val_data)
     test_dataset = CustomDataset(encoded_test_data)
-    
-    def debug_collate_fn(features):
-        print(f"data_collator input features: {features}")
-        batch = data_collator(features)
-        print(f"data_collator output batch: {batch}")
-        return batch
 
-    data_collator = DataCollatorForLanguageModeling(
+    class DebugDataCollatorForLanguageModeling(DataCollatorForLanguageModeling):
+        def __call__(self, features):
+            print(f"data_collator input features: {features}")
+            batch = super().__call__(features)
+            print(f"data_collator output batch: {batch}")
+            return batch
+
+    data_collator = DebugDataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
     )
 
@@ -117,10 +117,6 @@ def main(rank, world_size):
         report_to=None,
         local_rank=rank
     )
-    
-    # Create DataLoader with debugging print
-    train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
-    print(f"Train DataLoader length: {len(train_dataloader)}")
 
     class MyTrainer(Trainer):
         def on_epoch_end(self):
@@ -140,6 +136,9 @@ def main(rank, world_size):
             torch.cuda.empty_cache()
             return predictions, label_ids, metrics
 
+    train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
+    print(f"Train DataLoader length: {len(train_dataloader)}")
+
     trainer = MyTrainer(
         model=model,
         args=training_args,
@@ -158,6 +157,8 @@ def main(rank, world_size):
     cleanup()
 
 if __name__ == "__main__":
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+    
     world_size = torch.cuda.device_count()
     mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
-
