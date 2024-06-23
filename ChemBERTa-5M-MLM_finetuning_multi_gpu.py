@@ -98,18 +98,6 @@ def main(rank, world_size):
     val_dataset = CustomDataset(encoded_val_data)
     test_dataset = CustomDataset(encoded_test_data)
 
-    
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-    )
-    
-    train_dataloader = DataLoader(
-        train_dataset, 
-        batch_size=training_args.per_device_train_batch_size, 
-        collate_fn=data_collator,
-        shuffle=True  # Sometimes helpful to ensure data loading logic is invoked
-    )
-
     training_args = TrainingArguments(
         output_dir='./results',
         evaluation_strategy='epoch',
@@ -122,6 +110,17 @@ def main(rank, world_size):
         num_train_epochs=25,
         report_to=None,
         local_rank=rank
+    )
+    
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer, mlm=True, mlm_probability=0.15
+    )
+    
+    train_dataloader = DataLoader(
+        train_dataset, 
+        batch_size=training_args.per_device_train_batch_size, 
+        collate_fn=data_collator,
+        shuffle=True  # Sometimes helpful to ensure data loading logic is invoked
     )
 
     class MyTrainer(Trainer):
