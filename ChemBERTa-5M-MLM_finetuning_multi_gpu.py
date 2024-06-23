@@ -2,55 +2,27 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, TensorDataset
+from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction
+import torch.multiprocessing as mp
+import torch.distributed as dist
 import math
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-
 # Step 1: Set CUDA Visible Devices
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
-# Step 2: Load Tokenizer and Model
-tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
-model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+def setup(rank, world_size):
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
-# Step 3: Wrap the Model with DataParallel
-model = nn.DataParallel(model, device_ids=[0, 1])
+def cleanup():
+    dist.destroy_process_group()
 
-# Step 4: Move Model to CUDA (if necessary)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
-
-# Load and prepare data
-with open('./Datasets/combined_nps.txt', 'r') as file:
-    data = file.readlines()
-    data = [line.strip() for line in data]
-
-# Convert list to DataFrame to use sample method
-data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.5, random_state=42)  # Sampling a fraction for demonstration
-
-# Convert DataFrame back to list after sampling
-data = data_df['smiles'].tolist()
-
-# Split the data into training, validation, and testing sets
-train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42)
-val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
-
-def encode_smiles(smiles_list):
+def encode_smiles(smiles_list, tokenizer):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
 
-# Encode each data set
-encoded_train_data = encode_smiles(train_data)
-encoded_val_data = encode_smiles(val_data)
-encoded_test_data = encode_smiles(test_data)
-
-# Debugging print
-print("Encoded Data Sample:", encoded_train_data.keys(), {k: v.shape for k, v in encoded_train_data.items()})
-
-# since DataCollatorForLanguageModeling expects dictionaries
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
@@ -62,18 +34,7 @@ class CustomDataset(torch.utils.data.Dataset):
         item = {key: val[idx] for key, val in self.encodings.items()}
         return item
 
-# Creating the datasets with the custom dataset class
-train_dataset = CustomDataset(encoded_train_data)
-val_dataset = CustomDataset(encoded_val_data)
-test_dataset = CustomDataset(encoded_test_data)
-
-data_collator = DataCollatorForLanguageModeling(
-    tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-)
-
-
-def compute_metrics(p: EvalPrediction):
-    # Convert predictions and labels to tensors if they are numpy arrays
+def compute_metrics(p: EvalPrediction, model):
     if isinstance(p.predictions, np.ndarray):
         p.predictions = torch.tensor(p.predictions, device=model.device)
     if isinstance(p.label_ids, np.ndarray):
@@ -87,72 +48,96 @@ def compute_metrics(p: EvalPrediction):
     num_total = mask.sum().item()
     accuracy = num_correct / num_total
 
-    # Ensure predictions are reshaped correctly for the loss calculation
     loss = torch.nn.CrossEntropyLoss()(p.predictions.view(-1, model.config.vocab_size), p.label_ids.view(-1))
     perplexity = math.exp(loss.item())
 
     return {"accuracy": accuracy, "loss": loss.item(), "perplexity": perplexity}
 
-training_args = TrainingArguments(
-    output_dir='./results',              # Directory for saving output files
-    evaluation_strategy='epoch',         # Evaluation is done at the end of each epoch
-    save_strategy='epoch',               # Save model checkpoint at the end of each epoch
-    logging_dir='./logs',                # Directory for storing logs
-    logging_steps=10,                    # Log every 10 steps
-    learning_rate=4.249894798853819e-05, # Learning rate from the hyperparameter optimization
-    per_device_train_batch_size=16,      # Batch size from the hyperparameter optimization
-    weight_decay=0.05704196058538424,    # Weight decay from the hyperparameter optimization
-    num_train_epochs=25,                  # Number of training epochs from the hyperparameter optimization
-    report_to=None                       # Disable external reporting to keep training local
-)
+def main(rank, world_size):
+    setup(rank, world_size)
 
-# Define a function to print metrics at the end of each epoch
-def print_and_save_metrics(metrics, filename="training_metrics.txt"):
-    with open(filename, "a") as file:
-        print(metrics, file=file)
-    print(metrics)
+    # Load Tokenizer and Model
+    tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+    model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
-class MyTrainer(Trainer):
-    def on_epoch_end(self):
-        super().on_epoch_end()
-        output = self.evaluate()
-        print_and_save_metrics(output)
-        torch.cuda.empty_cache()
+    # Wrap the Model with DistributedDataParallel
+    model = model.to(rank)
+    model = DDP(model, device_ids=[rank])
 
-    def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
-        output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
-        torch.cuda.empty_cache()
-        return output
+    # Load and prepare data
+    with open('./Datasets/combined_nps.txt', 'r') as file:
+        data = file.readlines()
+        data = [line.strip() for line in data]
 
-    def predict(self, test_dataset):
-        predictions, label_ids, metrics = super().predict(test_dataset)
-        print_and_save_metrics(metrics, filename="final_test_metrics.txt")
-        torch.cuda.empty_cache()
-        return predictions, label_ids, metrics
+    data_df = pd.DataFrame(data, columns=['smiles'])
+    data_df = data_df.sample(frac=0.5, random_state=42)
+    data = data_df['smiles'].tolist()
 
-trainer = MyTrainer(
-    model=model,
-    args=training_args,
-    data_collator=data_collator,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
-    compute_metrics=compute_metrics
-)
+    train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42)
+    val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
 
-print(f"Train dataset length: {len(train_dataset)}")
-# Start training
-trainer.train()
+    encoded_train_data = encode_smiles(train_data, tokenizer)
+    encoded_val_data = encode_smiles(val_data, tokenizer)
+    encoded_test_data = encode_smiles(test_data, tokenizer)
 
-# Clear CUDA memory
-torch.cuda.empty_cache()
+    train_dataset = CustomDataset(encoded_train_data)
+    val_dataset = CustomDataset(encoded_val_data)
+    test_dataset = CustomDataset(encoded_test_data)
 
-# Evaluate on the test set after training
-trainer.predict(test_dataset)
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer, mlm=True, mlm_probability=0.15
+    )
 
-# Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta_half_data")
-tokenizer.save_pretrained("./trained_chemberta_half_data")
+    training_args = TrainingArguments(
+        output_dir='./results',
+        evaluation_strategy='epoch',
+        save_strategy='epoch',
+        logging_dir='./logs',
+        logging_steps=10,
+        learning_rate=4.249894798853819e-05,
+        per_device_train_batch_size=16,
+        weight_decay=0.05704196058538424,
+        num_train_epochs=25,
+        report_to=None,
+        local_rank=rank
+    )
 
-# When usin DataParallelism
-# model.module.save_pretrained("./trained_chemberta_half_data")
+    class MyTrainer(Trainer):
+        def on_epoch_end(self):
+            super().on_epoch_end()
+            output = self.evaluate()
+            print_and_save_metrics(output)
+            torch.cuda.empty_cache()
+
+        def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
+            output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+            torch.cuda.empty_cache()
+            return output
+
+        def predict(self, test_dataset):
+            predictions, label_ids, metrics = super().predict(test_dataset)
+            print_and_save_metrics(metrics, filename="final_test_metrics.txt")
+            torch.cuda.empty_cache()
+            return predictions, label_ids, metrics
+
+    trainer = MyTrainer(
+        model=model,
+        args=training_args,
+        data_collator=data_collator,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+        compute_metrics=lambda p: compute_metrics(p, model)
+    )
+
+    trainer.train()
+    torch.cuda.empty_cache()
+    trainer.predict(test_dataset)
+    model.module.save_pretrained("./trained_chemberta_half_data")
+    tokenizer.save_pretrained("./trained_chemberta_half_data")
+
+    cleanup()
+
+if __name__ == "__main__":
+    world_size = torch.cuda.device_count()
+    mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
 
