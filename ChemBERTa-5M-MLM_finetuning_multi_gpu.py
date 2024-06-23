@@ -36,6 +36,7 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = {key: val[idx] for key, val in self.encodings.items()}
+        print(f"CustomDataset __getitem__ idx: {idx}, item keys: {item.keys()}")
         return item
 
 def compute_metrics(p: EvalPrediction, model):
@@ -92,6 +93,12 @@ def main(rank, world_size):
     train_dataset = CustomDataset(encoded_train_data)
     val_dataset = CustomDataset(encoded_val_data)
     test_dataset = CustomDataset(encoded_test_data)
+    
+    def debug_collate_fn(features):
+        print(f"data_collator input features: {features}")
+        batch = data_collator(features)
+        print(f"data_collator output batch: {batch}")
+        return batch
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
