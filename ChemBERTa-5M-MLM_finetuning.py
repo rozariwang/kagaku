@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # Step 2: Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -25,7 +26,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
 
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.20, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.15, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
