@@ -1,11 +1,13 @@
 import os
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction
 import math
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
+
 
 # Set environment configuration for 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,5,6,7'
@@ -18,6 +20,7 @@ print(f"Using device: {device}")
 # Load the tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+model = nn.DataParallel(model)
 model.to(device)  # Move the model to the specified device
 
 # Load and prepare data
