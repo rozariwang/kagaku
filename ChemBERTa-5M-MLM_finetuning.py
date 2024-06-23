@@ -7,8 +7,9 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-# Set environment configuration for PyTorch
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = ''
+# Set environment configuration for 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,5,6,7'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'garbage_collection_threshold:0.6,max_split_size_mb:128'
 
 # Set device to GPU if CUDA is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
