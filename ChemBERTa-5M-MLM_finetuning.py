@@ -10,7 +10,7 @@ import numpy as np
 
 
 # Set environment configuration for 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1' #2, 5, 6, 7
+os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 5, 6, 7' 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 # Set device to GPU if CUDA is available
@@ -20,7 +20,7 @@ print(f"Using device: {device}")
 # Load the tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
-model = nn.DataParallel(model)
+model= nn.DataParallel(model,device_ids = [1, 2])
 model.to(device)  # Move the model to the specified device
 
 # Load and prepare data
