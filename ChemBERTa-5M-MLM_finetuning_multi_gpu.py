@@ -59,7 +59,8 @@ class CustomDataset(torch.utils.data.Dataset):
         return len(self.encodings['input_ids'])
 
     def __getitem__(self, idx):
-        return {key: self.encodings[key][idx] for key in self.encodings}
+        item = {key: val[idx] for key, val in self.encodings.items()}
+        return item
 
 # Creating the datasets with the custom dataset class
 train_dataset = CustomDataset(encoded_train_data)
