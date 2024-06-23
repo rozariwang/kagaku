@@ -139,7 +139,7 @@ trainer = MyTrainer(
     compute_metrics=compute_metrics
 )
 
-
+print(f"Train dataset length: {len(train_dataset)}")
 # Start training
 trainer.train()
 
