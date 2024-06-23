@@ -27,6 +27,11 @@ def cleanup():
 def encode_smiles(smiles_list, tokenizer):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
 
+def print_and_save_metrics(metrics, filename="training_metrics.txt"):
+    with open(filename, "a") as file:
+        print(metrics, file=file)
+    print(metrics)
+
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
@@ -97,6 +102,13 @@ def main(rank, world_size):
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
     )
+    
+    train_dataloader = DataLoader(
+        train_dataset, 
+        batch_size=training_args.per_device_train_batch_size, 
+        collate_fn=data_collator,
+        shuffle=True  # Sometimes helpful to ensure data loading logic is invoked
+    )
 
     training_args = TrainingArguments(
         output_dir='./results',
@@ -130,17 +142,9 @@ def main(rank, world_size):
             torch.cuda.empty_cache()
             return predictions, label_ids, metrics
 
-    def simple_collate(batch):
-        print("Received batch in collate_fn:", batch)
-        return torch.utils.data.dataloader.default_collate(batch)
+    
 
-    train_dataloader = DataLoader(
-        train_dataset, 
-        batch_size=training_args.per_device_train_batch_size, 
-        collate_fn=simple_collate,
-        shuffle=True  # Sometimes helpful to ensure data loading logic is invoked
-    )
-
+    '''
     # Check if DataLoader is setup correctly
     print("DataLoader setup with collate_fn:", train_dataloader.collate_fn)
     
@@ -168,6 +172,7 @@ def main(rank, world_size):
             print(f"Batch {i}: {batch}")
         else:
             break
+    '''
 
     trainer = MyTrainer(
         model=model,
