@@ -48,7 +48,7 @@ encoded_val_data = encode_smiles(val_data)
 encoded_test_data = encode_smiles(test_data)
 
 # Debugging print
-# print("Encoded Data Sample:", encoded_train_data.keys(), {k: v.shape for k, v in encoded_train_data.items()})
+print("Encoded Data Sample:", encoded_train_data.keys(), {k: v.shape for k, v in encoded_train_data.items()})
 
 # since DataCollatorForLanguageModeling expects dictionaries
 class CustomDataset(torch.utils.data.Dataset):
