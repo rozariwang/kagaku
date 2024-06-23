@@ -134,8 +134,32 @@ def main(rank, world_size):
         print("Received batch in collate_fn:", batch)
         return torch.utils.data.dataloader.default_collate(batch)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
-    print(f"Train DataLoader length: {len(train_dataloader)}")
+    train_dataloader = DataLoader(
+        train_dataset, 
+        batch_size=training_args.per_device_train_batch_size, 
+        collate_fn=simple_collate,
+        shuffle=True  # Sometimes helpful to ensure data loading logic is invoked
+    )
+
+    # Check if DataLoader is setup correctly
+    print("DataLoader setup with collate_fn:", train_dataloader.collate_fn)
+    
+    # Debug statements to check DataLoader and dataset setup
+    print("Dataset size:", len(train_dataset))
+    print("DataLoader batch size:", train_dataloader.batch_size)
+
+    # Check if there is data to process
+    if len(train_dataset) == 0:
+        print("Warning: Dataset is empty.")
+    elif len(train_dataloader) == 0:
+        print("Warning: DataLoader has no batches. Check batch size and dataset length.")
+
+    # Loop to iterate over the DataLoader
+    print("Starting to iterate over DataLoader:")
+    for batch_idx, batch in enumerate(train_dataloader):
+        print(f"Batch {batch_idx} has been processed.")
+        if batch_idx >= 5:  # Limit the output to avoid too much logging
+            break
     
     # Debugging DataLoader outputs
     print("Debugging DataLoader outputs:")
