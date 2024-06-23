@@ -36,7 +36,7 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = {key: val[idx] for key, val in self.encodings.items()}
-        print(f"CustomDataset __getitem__ idx: {idx}, item keys: {item.keys()}")
+        print(f"CustomDataset __getitem__ idx: {idx}, item: {item}")
         return item
 
 def compute_metrics(p: EvalPrediction, model):
@@ -138,6 +138,14 @@ def main(rank, world_size):
 
     train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, collate_fn=data_collator)
     print(f"Train DataLoader length: {len(train_dataloader)}")
+    
+    # Debugging DataLoader outputs
+    print("Debugging DataLoader outputs:")
+    for i, batch in enumerate(train_dataloader):
+        if i < 5:  # Print the first 5 batches
+            print(f"Batch {i}: {batch}")
+        else:
+            break
 
     trainer = MyTrainer(
         model=model,
