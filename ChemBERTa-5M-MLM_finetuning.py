@@ -9,19 +9,19 @@ import pandas as pd
 import numpy as np
 
 
-# Set environment configuration for 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1' 
-#os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+# Step 1: Set CUDA Visible Devices
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
-# Set device to GPU if CUDA is available
-#device = torch.device("cuda:1,2" if torch.cuda.is_available() else "cpu")
-#print(f"Using device: {device}")
-
-# Load the tokenizer and model
+# Step 2: Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
-model= nn.DataParallel(model, [0, 1])
-#model.to(device)  # Move the model to the specified device
+
+# Step 3: Wrap the Model with DataParallel
+model = nn.DataParallel(model, device_ids=[0, 1])
+
+# Step 4: Move Model to CUDA (if necessary)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
