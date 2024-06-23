@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 # Set environment configuration for PyTorch
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = ''
 
 # Set device to GPU if CUDA is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
