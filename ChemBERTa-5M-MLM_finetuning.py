@@ -9,19 +9,15 @@ import pandas as pd
 import numpy as np
 
 
-# Step 1: Set CUDA Visible Devices
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 # Step 2: Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
-# Step 3: Wrap the Model with DataParallel
-model = nn.DataParallel(model, device_ids=[0, 1])
-
 # Step 4: Move Model to CUDA (if necessary)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
+print(f"Using device: {device}")
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
@@ -30,7 +26,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
 
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.5, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.25, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -101,7 +97,7 @@ training_args = TrainingArguments(
     learning_rate=4.249894798853819e-05, # Learning rate from the hyperparameter optimization
     per_device_train_batch_size=16,      # Batch size from the hyperparameter optimization
     weight_decay=0.05704196058538424,    # Weight decay from the hyperparameter optimization
-    num_train_epochs=25,                  # Number of training epochs from the hyperparameter optimization
+    num_train_epochs=20,                  # Number of training epochs from the hyperparameter optimization
     report_to=None                       # Disable external reporting to keep training local
 )
 
@@ -149,8 +145,8 @@ torch.cuda.empty_cache()
 trainer.predict(test_dataset)
 
 # Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta_half_data")
-tokenizer.save_pretrained("./trained_chemberta_half_data")
+model.save_pretrained("./trained_chemberta_quarter_data")
+tokenizer.save_pretrained("./trained_chemberta_quarter_data")
 
 # When usin DataParallelism
 # model.module.save_pretrained("./trained_chemberta_half_data")
