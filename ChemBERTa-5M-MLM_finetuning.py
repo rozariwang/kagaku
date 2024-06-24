@@ -26,7 +26,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
 
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.15, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.5, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -148,8 +148,8 @@ torch.cuda.empty_cache()
 trainer.predict(test_dataset)
 
 # Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta_20perc_data")
-tokenizer.save_pretrained("./trained_chemberta_20perc_data")
+model.save_pretrained("./trained_chemberta_half_data")
+tokenizer.save_pretrained("./trained_chemberta_half_data")
 
 # When usin DataParallelism
 # model.module.save_pretrained("./trained_chemberta_half_data")
