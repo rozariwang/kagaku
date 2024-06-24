@@ -96,6 +96,7 @@ training_args = TrainingArguments(
     logging_steps=10,                    # Log every 10 steps
     learning_rate=4.249894798853819e-05, # Learning rate from the hyperparameter optimization
     per_device_train_batch_size=16,      # Batch size from the hyperparameter optimization
+    per_device_eval_batch_size=16,
     weight_decay=0.05704196058538424,    # Weight decay from the hyperparameter optimization
     num_train_epochs=20,                  # Number of training epochs from the hyperparameter optimization
     report_to=None                       # Disable external reporting to keep training local
@@ -115,14 +116,16 @@ class MyTrainer(Trainer):
         torch.cuda.empty_cache()
 
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
-        output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
-        torch.cuda.empty_cache()
+        with torch.no_grad():  # Disable gradient computation
+            output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+            torch.cuda.empty_cache()
         return output
-
+    
     def predict(self, test_dataset):
-        predictions, label_ids, metrics = super().predict(test_dataset)
-        print_and_save_metrics(metrics, filename="final_test_metrics.txt")
-        torch.cuda.empty_cache()
+        with torch.no_grad():  # Disable gradient computation
+            predictions, label_ids, metrics = super().predict(test_dataset)
+            print_and_save_metrics(metrics, filename="final_test_metrics.txt")
+            torch.cuda.empty_cache()
         return predictions, label_ids, metrics
 
 trainer = MyTrainer(
