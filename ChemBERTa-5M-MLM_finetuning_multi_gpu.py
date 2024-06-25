@@ -11,6 +11,10 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import logging
+import wandb
+
+
+wandb.login(key="ab94aac01d8489527f36831ac31eacae67c98286")
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, filename='training_log.log', filemode='w',
