@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG, filename='training_log.log', filemode='
 
 os.environ['MASTER_ADDR'] = 'localhost'
 os.environ['MASTER_PORT'] = '12355'
-os.environ['CUDA_VISIBLE_DEVICES'] = '4, 5, 6, 7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '6, 7'
 
 def setup(rank, world_size):
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
@@ -175,7 +175,7 @@ def main(rank, world_size):
     cleanup()
 
 if __name__ == "__main__":
-    world_size = torch.cuda.device_count()
+    world_size = 2
     mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
     logging.info("Process started with world size determined based on CUDA device count")
 
