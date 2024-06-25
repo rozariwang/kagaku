@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 # Step 1: Set CUDA Visible Devices
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,5,6'
 
 def setup(rank, world_size):
     dist.init_process_group("nccl", rank=rank, world_size=world_size)

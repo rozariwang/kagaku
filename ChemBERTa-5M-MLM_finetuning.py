@@ -8,8 +8,11 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
+# Set the GPU to use
+os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+# Set environment variable to handle memory fragmentation
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # Step 2: Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -18,6 +21,9 @@ model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 print(f"Using device: {device}")
+
+# Print CUDA memory summary after moving model to GPU
+print(torch.cuda.memory_summary())
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
@@ -114,11 +120,13 @@ class MyTrainer(Trainer):
         output = self.evaluate()
         print_and_save_metrics(output)
         torch.cuda.empty_cache()
+        print(torch.cuda.memory_summary())
 
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
         with torch.no_grad():  # Disable gradient computation
             output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
             torch.cuda.empty_cache()
+            print(torch.cuda.memory_summary())
         return output
     
     def predict(self, test_dataset):
@@ -126,6 +134,7 @@ class MyTrainer(Trainer):
             predictions, label_ids, metrics = super().predict(test_dataset)
             print_and_save_metrics(metrics, filename="final_test_metrics.txt")
             torch.cuda.empty_cache()
+            print(torch.cuda.memory_summary())
         return predictions, label_ids, metrics
 
 trainer = MyTrainer(
