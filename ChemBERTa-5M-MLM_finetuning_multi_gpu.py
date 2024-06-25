@@ -109,7 +109,7 @@ def main(rank, world_size):
     logging.debug("Data loaded and processed")
 
     data_df = pd.DataFrame(data, columns=['smiles'])
-    data_df = data_df.sample(frac=0.5, random_state=42)
+    data_df = data_df.sample(frac=0.01, random_state=42)
     data = data_df['smiles'].tolist()
 
     train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42)
@@ -177,5 +177,5 @@ def main(rank, world_size):
 if __name__ == "__main__":
     world_size = 2
     mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
-    logging.info("Process started with world size determined based on CUDA device count")
+    logging.info("Process started with 2 devices.")
 
