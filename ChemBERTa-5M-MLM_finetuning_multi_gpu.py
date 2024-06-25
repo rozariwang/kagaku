@@ -1,8 +1,4 @@
 import os
-
-os.environ['MASTER_ADDR'] = 'localhost'
-os.environ['MASTER_PORT'] = '12355'
-
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, TensorDataset
@@ -15,8 +11,11 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '12355'
+
 # Step 1: Set CUDA Visible Devices
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,5,6'
+os.environ['CUDA_VISIBLE_DEVICES'] = '4, 5, 6, 7'
 
 def setup(rank, world_size):
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
@@ -107,7 +106,7 @@ def main(rank, world_size):
         learning_rate=4.249894798853819e-05,
         per_device_train_batch_size=16,
         weight_decay=0.05704196058538424,
-        num_train_epochs=25,
+        num_train_epochs=20,
         report_to=None,
         local_rank=rank
     )
