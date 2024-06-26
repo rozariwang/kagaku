@@ -26,7 +26,7 @@ model = model.to(device)
 print(f"Using device: {device}")
 
 # Print CUDA memory summary after moving model to GPU
-print(torch.cuda.memory_summary())
+#print(torch.cuda.memory_summary())
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
@@ -122,8 +122,8 @@ class MyTrainer(Trainer):
         super().on_epoch_end()
         output = self.evaluate()
         print_and_save_metrics(output)
-        torch.cuda.empty_cache()
-        print(torch.cuda.memory_summary())
+        #torch.cuda.empty_cache()
+        #print(torch.cuda.memory_summary())
 
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
         with torch.no_grad():  # Disable gradient computation
