@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python /nethome/hhwang/hhwang/kagaku/ChemBERTa-5M-MLM_finetuning_multi_gpu.py
+python /nethome/hhwang/hhwang/kagaku/debugging_trial2.py
