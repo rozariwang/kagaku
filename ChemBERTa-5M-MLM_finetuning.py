@@ -157,8 +157,8 @@ torch.cuda.empty_cache()
 trainer.predict(test_dataset)
 
 # Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta_half_data")
-tokenizer.save_pretrained("./trained_chemberta_half_data")
+model.save_pretrained("./trained_chemberta_10perc_data")
+tokenizer.save_pretrained("./trained_chemberta_10perc_data")
 
 # When usin DataParallelism
 # model.module.save_pretrained("./trained_chemberta_half_data")
