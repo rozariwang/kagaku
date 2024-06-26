@@ -64,17 +64,31 @@ def evaluate(model, dataloader, device):
     total_loss, total_correct, total_samples = 0, 0, 0
     with torch.no_grad():
         for batch in dataloader:
-            inputs = {'input_ids': batch['input_ids'].to(device), 'attention_mask': batch['attention_mask'].to(device)}
+            inputs = {
+                'input_ids': batch['input_ids'].to(device),
+                'attention_mask': batch['attention_mask'].to(device),
+                'labels': batch['input_ids'].to(device)  # Ensure labels are provided
+            }
             outputs = model(**inputs)
             loss = outputs.loss
-            total_loss += loss.item()
-            predictions = outputs.logits.argmax(dim=-1)
-            total_correct += (predictions == batch['labels'].to(device)).sum().item()
-            total_samples += batch['input_ids'].size(0)
+            if loss is not None:
+                total_loss += loss.item()
+                predictions = outputs.logits.argmax(dim=-1)
+                total_correct += (predictions == inputs['labels']).sum().item()
+                total_samples += inputs['input_ids'].size(0)
+            else:
+                logging.error("Loss was not computed. Check model inputs and configuration.")
 
-    accuracy = total_correct / total_samples
-    logging.info(f"Eval Loss: {total_loss / len(dataloader)}, Accuracy: {accuracy}")
-    return total_loss / len(dataloader), accuracy
+    if total_samples > 0:
+        accuracy = total_correct / total_samples
+        average_loss = total_loss / len(dataloader)
+    else:
+        accuracy = 0
+        average_loss = 0
+
+    logging.info(f"Eval Loss: {average_loss}, Accuracy: {accuracy}")
+    return average_loss, accuracy
+
 
 def main(rank, world_size):
     try:
