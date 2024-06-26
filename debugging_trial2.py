@@ -86,6 +86,21 @@ def evaluate(model, dataloader, device):
     logging.info(f"Evaluation completed. Loss: {average_loss}, Accuracy: {accuracy}")
     return average_loss, accuracy
 
+def train(model, dataloader, optimizer, device):
+    model.train()  # Set the model to training mode
+    total_loss = 0
+    for batch in dataloader:
+        inputs = {key: val.to(device) for key, val in batch.items()}
+        optimizer.zero_grad()  # Clear any previously calculated gradients
+        outputs = model(**inputs)
+        loss = outputs.loss
+        loss.backward()  # Compute gradient of the loss w.r.t. all trainable parameters
+        optimizer.step()  # Update parameters
+        total_loss += loss.item()
+    average_loss = total_loss / len(dataloader)
+    logging.info(f"Training completed for one epoch. Average Loss: {average_loss}")
+    return average_loss
+
 def main(rank, world_size):
     setup(rank, world_size)
     data_path = './Datasets/combined_nps.txt'  # Adjust path as necessary
@@ -109,12 +124,19 @@ def main(rank, world_size):
     val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
-    # Training omitted for brevity - insert training code here
+    # Optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+
+    # Training loop
+    num_epochs = 3
+    for epoch in range(num_epochs):
+        logging.info(f"Starting epoch {epoch+1}/{num_epochs}")
+        train_loss = train(model, train_loader, optimizer, rank)
 
     # Evaluation
     val_loss, val_accuracy = evaluate(model, val_loader, rank)
     test_loss, test_accuracy = evaluate(model, test_loader, rank)
-    
+
     # Log evaluation results
     logging.info(f"Validation Results - Loss: {val_loss}, Accuracy: {val_accuracy}")
     logging.info(f"Test Results - Loss: {test_loss}, Accuracy: {test_accuracy}")
