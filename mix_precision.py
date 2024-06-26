@@ -22,7 +22,7 @@ model.to(device)  # Move the model to the specified device
 scaler = GradScaler()
 
 # Load and prepare data
-with open('combined_nps.txt', 'r') as file:
+with open('./Datasets/combined_nps.txt', 'r') as file:
     data = file.readlines()
     data = [line.strip() for line in data]
 
