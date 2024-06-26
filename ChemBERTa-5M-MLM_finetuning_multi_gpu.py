@@ -3,10 +3,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
-from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction
+from transformers import AutoTokenizer, AutoModelForMaskedLM
 import torch.multiprocessing as mp
 import torch.distributed as dist
-import math
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
@@ -22,16 +21,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '6, 7'
 
 def setup(rank, world_size):
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    torch.cuda.set_device(rank)
     logging.info(f"Initialized process group for rank {rank} in world of size {world_size}")
 
 def cleanup():
     dist.destroy_process_group()
     logging.info("Destroyed process group")
-'''
-def encode_smiles(smiles_list, tokenizer):
-    logging.debug("Encoding smiles")
-    return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
-'''
+
 def encode_smiles(smiles_list, tokenizer):
     if not smiles_list:
         logging.error("Empty smiles list provided to tokenizer")
@@ -44,7 +40,6 @@ def print_and_save_metrics(metrics, filename="training_metrics.txt"):
     with open(filename, "a") as file:
         print(metrics, file=file)
     logging.info(f"Metrics saved and printed: {metrics}")
-    print(metrics)
 
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
@@ -55,11 +50,6 @@ class CustomDataset(torch.utils.data.Dataset):
         return len(self.encodings['input_ids'])
 
     def __getitem__(self, idx):
-        item = {key: val[idx] for key, val in self.encodings.items()}
-        logging.debug(f"CustomDataset __getitem__ idx: {idx}, item: {item}")
-        return item
-    
-    def __getitem__(self, idx):
         try:
             item = {key: val[idx] for key, val in self.encodings.items()}
             if not item['input_ids'].size(0):
@@ -69,51 +59,25 @@ class CustomDataset(torch.utils.data.Dataset):
             logging.error(f"IndexError: {str(e)} at index {idx}")
             raise
 
-def compute_metrics(p: EvalPrediction, model):
-    if isinstance(p.predictions, np.ndarray):
-        p.predictions = torch.tensor(p.predictions, device=model.device)
-    if isinstance(p.label_ids, np.ndarray):
-        p.label_ids = torch.tensor(p.label_ids, dtype=torch.long, device=model.device)
+def evaluate(model, dataloader, device):
+    model.eval()
+    total_loss, total_correct, total_samples = 0, 0, 0
+    with torch.no_grad():
+        for batch in dataloader:
+            inputs = {'input_ids': batch['input_ids'].to(device), 'attention_mask': batch['attention_mask'].to(device)}
+            outputs = model(**inputs)
+            loss = outputs.loss
+            total_loss += loss.item()
+            predictions = outputs.logits.argmax(dim=-1)
+            total_correct += (predictions == batch['labels'].to(device)).sum().item()
+            total_samples += batch['input_ids'].size(0)
 
-    preds = p.predictions.argmax(-1)
-    labels = p.label_ids
-    mask = labels != -100
-
-    num_correct = (preds[mask] == labels[mask]).sum().item()
-    num_total = mask.sum().item()
-    accuracy = num_correct / num_total
-
-    loss = torch.nn.CrossEntropyLoss()(p.predictions.view(-1, model.config.vocab_size), p.label_ids.view(-1))
-    perplexity = math.exp(loss.item())
-
-    metrics = {"accuracy": accuracy, "loss": loss.item(), "perplexity": perplexity}
-    logging.info(f"Computed metrics: {metrics}")
-    return metrics
-
-class MyTrainer(Trainer):
-    def on_epoch_end(self):
-        super().on_epoch_end()
-        output = self.evaluate()
-        print_and_save_metrics(output)
-        logging.info(f"Epoch ended with output: {output}")
-        torch.cuda.empty_cache()
-
-    def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
-        output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
-        torch.cuda.empty_cache()
-        logging.info(f"Evaluation completed with output: {output}")
-        return output
-
-    def predict(self, test_dataset):
-        predictions, label_ids, metrics = super().predict(test_dataset)
-        print_and_save_metrics(metrics, filename="final_test_metrics.txt")
-        logging.info(f"Prediction completed with metrics: {metrics}")
-        torch.cuda.empty_cache()
-        return predictions, label_ids, metrics
+    accuracy = total_correct / total_samples
+    logging.info(f"Eval Loss: {total_loss / len(dataloader)}, Accuracy: {accuracy}")
+    return total_loss / len(dataloader), accuracy
 
 def main(rank, world_size):
     try:
-        logging.debug(f"Starting main function with rank {rank}")
         setup(rank, world_size)
 
         tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -124,7 +88,7 @@ def main(rank, world_size):
 
         with open('./Datasets/combined_nps.txt', 'r') as file:
             data = file.readlines()
-            data = [line.strip() for line in data]
+        data = [line.strip() for line in data]
         logging.debug("Data loaded and processed")
 
         data_df = pd.DataFrame(data, columns=['smiles'])
@@ -143,71 +107,48 @@ def main(rank, world_size):
         val_dataset = CustomDataset(encoded_val_data)
         test_dataset = CustomDataset(encoded_test_data)
 
-        training_args = TrainingArguments(
-            output_dir='./results',
-            evaluation_strategy='epoch',
-            save_strategy='epoch',
-            logging_dir='./logs',
-            logging_steps=10,
-            learning_rate=4.249894798853819e-05,
-            per_device_train_batch_size=16,
-            weight_decay=0.05704196058538424,
-            num_train_epochs=20,
-            report_to=None,
-            local_rank=rank
-        )
-        logging.info("Training arguments set")
+        train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+        val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+        logging.info("DataLoaders setup completed")
 
-        data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-        )
-        logging.debug("Data collator configured")
+        optimizer = torch.optim.Adam(model.parameters(), lr=4.249894798853819e-05)
 
-        train_dataloader = DataLoader(
-            train_dataset, 
-            batch_size=training_args.per_device_train_batch_size, 
-            collate_fn=data_collator,
-            shuffle=True
-        )
-        logging.info("DataLoader setup completed")
-    
-        # Debug block 
-        def validate_batch(batch): 
-            if 'input_ids' not in batch or not batch['input_ids'].size(0):
-                logging.error(f"Batch missing input_ids or empty input_ids: {batch}")
-                raise ValueError("Invalid batch with missing input_ids")
-        # Debug block 
-        for batch in train_dataloader: 
-            validate_batch(batch)
-            break  # Remove break to validate all batches
+        # Training loop
+        model.train()
+        for epoch in range(20):  # Number of epochs
+            for batch in train_dataloader:
+                inputs = {'input_ids': batch['input_ids'].to(rank), 'attention_mask': batch['attention_mask'].to(rank)}
+                optimizer.zero_grad()
+                outputs = model(**inputs)
+                loss = outputs.loss
+                loss.backward()
+                optimizer.step()
+                logging.info(f"Loss: {loss.item()}")
 
-        trainer = MyTrainer(
-            model=model,
-            args=training_args,
-            data_collator=data_collator,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset,
-            compute_metrics=lambda p: compute_metrics(p, model)
-        )
+        # Evaluation
+        eval_loss, eval_accuracy = evaluate(model, val_dataloader, rank)
+        logging.info(f"Validation completed. Loss: {eval_loss}, Accuracy: {eval_accuracy}")
 
-        trainer.train()
-        torch.cuda.empty_cache()
+        # Test
+        test_loss, test_accuracy = evaluate(model, test_dataloader, rank)
+        logging.info(f"Test completed. Loss: {test_loss}, Accuracy: {test_accuracy}")
+
         logging.info("Training completed")
 
-        predictions, label_ids, metrics = trainer.predict(test_dataset)
-        logging.info(f"Final test metrics: {metrics}")
-
+        # Cleanup and save model
         model.module.save_pretrained("./trained_chemberta_half_data")
         tokenizer.save_pretrained("./trained_chemberta_half_data")
         logging.info("Model and tokenizer saved successfully")
+        cleanup()
     except Exception as e:
         logging.exception("An error occurred during training: {}".format(str(e)))
         cleanup()
         raise
-        
 
 if __name__ == "__main__":
     world_size = 2
     mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
     logging.info("Process started with 2 devices.")
+
 
