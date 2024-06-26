@@ -43,8 +43,25 @@ def setup_tokenizer_and_model():
     return tokenizer, model
 
 def tokenize_data(tokenizer, data):
-    logging.info("Tokenizing data.")
-    return tokenizer(data, truncation=True, padding="max_length", max_length=512)
+    if not data:
+        logging.error("Received an empty list for tokenization")
+    tokenized_output = tokenizer(data, truncation=True, padding="max_length", max_length=512)
+    if 'input_ids' not in tokenized_output or not tokenized_output['input_ids']:
+        logging.error("No input_ids generated after tokenization")
+    return tokenized_output
+
+def direct_model_test(tokenizer, model):
+    logging.info("Running direct model test.")
+    test_input = ["Test input string", "Another test string"]
+    tokenized_data = tokenize_data(tokenizer, test_input)
+    input_ids = torch.tensor(tokenized_data['input_ids']).to(0)
+    attention_mask = torch.tensor(tokenized_data['attention_mask']).to(0)
+    
+    model = model.to(0)
+    model.eval()
+    with torch.no_grad():
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+    print("Direct test output logits shape:", outputs.logits.shape)
 
 def main(rank, world_size):
     setup(rank, world_size)
@@ -52,29 +69,27 @@ def main(rank, world_size):
     data = load_and_prepare_data(data_path)
     tokenizer, model = setup_tokenizer_and_model()
 
-    # Tokenize a small batch for testing
+    # Run a direct model test
+    if rank == 0:  # Run this test only on the first process
+        direct_model_test(tokenizer, model)
+
+    # Regular processing starts here
     sample_data = data[:10]  # Smaller subset to ensure quick processing
     tokenized_data = tokenize_data(tokenizer, sample_data)
-    logging.info(f"Tokenized data: {tokenized_data.keys()}")
-
-    # Convert to tensors and distribute to device
     input_ids = torch.tensor(tokenized_data['input_ids']).to(rank)
     attention_mask = torch.tensor(tokenized_data['attention_mask']).to(rank)
     
-    # Wrap model with DDP
     model = model.to(rank)
     model = DDP(model, device_ids=[rank])
-
-    # Simulate a single forward pass
     with torch.no_grad():
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-        logging.info("Model forward pass completed on rank {rank}.")
+    logging.info("Model forward pass completed on rank {rank}.")
 
-    # Output the shape of model outputs to verify everything is working
     print(f"Output shape on rank {rank}:", outputs.logits.shape)
     cleanup()
 
 if __name__ == "__main__":
     world_size = 2  # Explicitly setting world size to 2
     mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
+
 
