@@ -9,11 +9,11 @@ import pandas as pd
 import numpy as np
 
 # Set the GPU to use
-os.environ["CUDA_VISIBLE_DEVICES"] = "7" 
+#os.environ["CUDA_VISIBLE_DEVICES"] = "7" 
 # Set environment variable to handle memory fragmentation
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+#os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 # For "CUDA error: an illegal memory access was encountered"
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+#os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
 # Step 2: Load Tokenizer and Model
