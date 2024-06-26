@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python /nethome/hhwang/hhwang/kagaku/ChemBERTa-5M-MLM_finetuning.py
+python /nethome/hhwang/hhwang/kagaku/mix_precision.py
