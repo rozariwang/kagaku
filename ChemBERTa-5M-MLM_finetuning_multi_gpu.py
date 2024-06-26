@@ -79,7 +79,6 @@ def evaluate(model, dataloader, device):
 def main(rank, world_size):
     try:
         setup(rank, world_size)
-
         tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
         model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
         model = model.to(rank)
@@ -114,14 +113,20 @@ def main(rank, world_size):
 
         optimizer = torch.optim.Adam(model.parameters(), lr=4.249894798853819e-05)
 
-        # Training loop
         model.train()
         for epoch in range(20):  # Number of epochs
             for batch in train_dataloader:
-                inputs = {'input_ids': batch['input_ids'].to(rank), 'attention_mask': batch['attention_mask'].to(rank)}
+                inputs = {
+                    'input_ids': batch['input_ids'].to(rank),
+                    'attention_mask': batch['attention_mask'].to(rank),
+                    'labels': batch['input_ids'].to(rank)  # Assuming you are using labels same as input_ids for MLM
+                }
                 optimizer.zero_grad()
                 outputs = model(**inputs)
                 loss = outputs.loss
+                if loss is None:
+                    logging.error("Loss computation failed. Outputs did not include loss.")
+                    continue
                 loss.backward()
                 optimizer.step()
                 logging.info(f"Loss: {loss.item()}")
@@ -136,7 +141,7 @@ def main(rank, world_size):
 
         logging.info("Training completed")
 
-        # Cleanup and save model
+
         model.module.save_pretrained("./trained_chemberta_half_data")
         tokenizer.save_pretrained("./trained_chemberta_half_data")
         logging.info("Model and tokenizer saved successfully")
