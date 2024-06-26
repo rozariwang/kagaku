@@ -54,6 +54,11 @@ encoded_train_data = encode_smiles(train_data)
 encoded_val_data = encode_smiles(val_data)
 encoded_test_data = encode_smiles(test_data)
 
+# Debug: Print shapes of encoded data
+print("Train data shapes:", {k: v.shape for k, v in encoded_train_data.items()})
+print("Validation data shapes:", {k: v.shape for k, v in encoded_val_data.items()})
+print("Test data shapes:", {k: v.shape for k, v in encoded_test_data.items()})
+
 # Debugging print
 # print("Encoded Data Sample:", encoded_train_data.keys(), {k: v.shape for k, v in encoded_train_data.items()})
 
