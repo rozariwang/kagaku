@@ -64,7 +64,7 @@ def tokenize_data(tokenizer, data):
     if not data:
         logging.error("Received an empty list for tokenization")
     tokenized_output = tokenizer(data, truncation=True, padding="max_length", max_length=512, return_tensors="pt")
-    if 'input_ids' not in tokenized_output or not tokenized_output['input_ids']:
+    if 'input_ids' not in tokenized_output or tokenized_output['input_ids'].nelement() == 0:
         logging.error("No input_ids generated after tokenization")
     return tokenized_output
 
