@@ -13,7 +13,9 @@ import numpy as np
 # Set environment variable to handle memory fragmentation
 #os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 # For "CUDA error: an illegal memory access was encountered"
-#os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3, 4, 5, 6, 7" 
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
 # Step 2: Load Tokenizer and Model
