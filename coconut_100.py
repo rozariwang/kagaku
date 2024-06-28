@@ -47,7 +47,7 @@ class SMILESDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return {key: self.encodings[key][idx] for key in self.encodings}
 
-encoded_data = encode_smiles(data['smiles'].tolist())
+encoded_data = encode_smiles(data)
 dataset = SMILESDataset(encoded_data)
 
 # Split data into train, eval, and test sets (80/10/10)
