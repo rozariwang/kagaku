@@ -2,7 +2,7 @@ import os
 import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction, TrainerCallback
 import wandb
 import optuna
@@ -10,9 +10,6 @@ import plotly.graph_objects as vis
 
 # Expandable memory segments configuration for PyTorch
 # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
-
-# Set the W&B API key
-os.environ['WANDB_API_KEY'] = 'ab94aac01d8489527f36831ac31eacae67c98286'
 
 # Initialize W&B
 wandb.init(project="chemberta-finetuning")
@@ -53,10 +50,13 @@ class SMILESDataset(torch.utils.data.Dataset):
 encoded_data = encode_smiles(data['smiles'].tolist())
 dataset = SMILESDataset(encoded_data)
 
-train_idx, val_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.5, random_state=42)
+# Split data into train, eval, and test sets (80/10/10)
+train_idx, temp_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.2, random_state=42)
+val_idx, test_idx = train_test_split(temp_idx, test_size=0.5, random_state=42)
 
 train_dataset = SMILESDataset({key: val[train_idx] for key, val in encoded_data.items()})
 val_dataset = SMILESDataset({key: val[val_idx] for key, val in encoded_data.items()})
+test_dataset = SMILESDataset({key: val[test_idx] for key, val in encoded_data.items()})
 
 class InputDebugCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
@@ -115,8 +115,36 @@ trainer = Trainer(
     compute_metrics=compute_metrics
 )
 
+# Accumulative evaluation
+def accumulative_eval(trainer, eval_dataset, batch_size):
+    eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size)
+    total_loss, total_correct, total_count = 0, 0, 0
+    model.eval()
+    with torch.no_grad():
+        for batch in eval_dataloader:
+            inputs = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**inputs)
+            logits = outputs.logits
+            loss = outputs.loss
+            labels = inputs['labels']
+            mask = labels != -100
+            preds = logits.argmax(-1)
+            correct = (preds[mask] == labels[mask]).sum().item()
+            count = mask.sum().item()
+            total_loss += loss.item() * count
+            total_correct += correct
+            total_count += count
+    avg_loss = total_loss / total_count
+    accuracy = total_correct / total_count
+    return {"eval_loss": avg_loss, "eval_accuracy": accuracy}
+
 # Start training
 trainer.train()
+
+# Custom evaluation to handle large datasets
+eval_results = accumulative_eval(trainer, val_dataset, best_hyperparameters["per_device_train_batch_size"])
+print("Evaluation Results:", eval_results)
+wandb.log(eval_results)
 
 # Finish the W&B run
 wandb.finish()
