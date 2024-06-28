@@ -11,6 +11,9 @@ import plotly.graph_objects as vis
 # Expandable memory segments configuration for PyTorch
 # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
+# Set max_split_size_mb to avoid memory fragmentation
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+
 # Initialize W&B
 wandb.init(project="chemberta-finetuning")
 
@@ -61,8 +64,8 @@ test_dataset = SMILESDataset({key: val[test_idx] for key, val in encoded_data.it
 class InputDebugCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         torch.cuda.empty_cache()  # Clear cache after each step
-        if state.global_step % 100 == 0:  # Example condition to check
-            print("Cleared CUDA cache")
+        #if state.global_step % 100 == 0:  # Example condition to check
+            #print("Cleared CUDA cache")
 
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
@@ -101,6 +104,7 @@ training_args = TrainingArguments(
     num_train_epochs=best_hyperparameters["num_train_epochs"],  # Set a very high number to allow training until convergence
     per_device_train_batch_size=best_hyperparameters["per_device_train_batch_size"],
     weight_decay=best_hyperparameters["weight_decay"],
+    fp16=True,  # Mixed precision training
     report_to="wandb"  # Report metrics to W&B
 )
 
@@ -145,6 +149,11 @@ trainer.train()
 eval_results = accumulative_eval(trainer, val_dataset, best_hyperparameters["per_device_train_batch_size"])
 print("Evaluation Results:", eval_results)
 wandb.log(eval_results)
+
+# Evaluate on test dataset
+test_results = accumulative_eval(trainer, test_dataset, best_hyperparameters["per_device_train_batch_size"])
+print("Test Results:", test_results)
+wandb.log(test_results)
 
 # Finish the W&B run
 wandb.finish()
