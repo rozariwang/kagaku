@@ -112,6 +112,8 @@ def print_and_save_metrics(metrics, filename="training_metrics.txt"):
 class MyTrainer(Trainer):
     def on_epoch_end(self):
         super().on_epoch_end()
+        output = self.evaluate()
+        print_and_save_metrics(output)
         # Clear CUDA cache after each epoch
         torch.cuda.empty_cache()
     

@@ -9,7 +9,7 @@ import optuna
 import plotly.graph_objects as vis
 
 # Expandable memory segments configuration for PyTorch
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+# os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 # Set the W&B API key
 os.environ['WANDB_API_KEY'] = 'ab94aac01d8489527f36831ac31eacae67c98286'
@@ -22,13 +22,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 # Load the tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
-model = AutoModelForMaskedLM.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
+tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model.to(device)  # Move the model to the specified device
 
 # Load and prepare data
-data = pd.read_csv('COCONUT_DB_absoluteSMILES.smi', sep=' ', header=None, names=['smiles', 'id'])
-data = data.sample(frac=0.2, random_state=42)  # Sampling a fraction 
+with open('./Datasets/combined_nps.txt', 'r') as file:
+    data = file.readlines()
+    data = [line.strip() for line in data]
+# Convert list to DataFrame to use sample method
+data_df = pd.DataFrame(data, columns=['smiles'])
+data_df = data_df.sample(frac=0.1, random_state=42)  # Sampling a fraction for demonstration
+
+# Convert DataFrame back to list after sampling
+data = data_df['smiles'].tolist()
 
 def encode_smiles(smiles_list):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
@@ -62,7 +69,7 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 def model_init():
-    return AutoModelForMaskedLM.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
+    return AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 def compute_metrics(p: EvalPrediction):
     preds = p.predictions.argmax(-1)
@@ -75,11 +82,12 @@ def compute_metrics(p: EvalPrediction):
 
 # Define the best hyperparameters from trial
 best_hyperparameters = {
-    'learning_rate': 4.8061616335113344e-05,
+    'learning_rate': 4.249894798853819e-05,
     'num_train_epochs': 5,  # Change to 'None' or a large number to train until convergence
-    'per_device_train_batch_size': 64,
-    'weight_decay': 0.056124041186073524
+    'per_device_train_batch_size': 16,
+    'weight_decay': 0.05704196058538424
 }
+
 
 training_args = TrainingArguments(
     output_dir='./results',
@@ -90,11 +98,12 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
     metric_for_best_model='loss',
     learning_rate=best_hyperparameters["learning_rate"],
-    num_train_epochs=1000,  # Set a very high number to allow training until convergence
+    num_train_epochs=best_hyperparameters["num_train_epochs"],  # Set a very high number to allow training until convergence
     per_device_train_batch_size=best_hyperparameters["per_device_train_batch_size"],
     weight_decay=best_hyperparameters["weight_decay"],
     report_to="wandb"  # Report metrics to W&B
 )
+
 
 trainer = Trainer(
     model_init=model_init,
