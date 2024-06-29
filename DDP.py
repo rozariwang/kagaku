@@ -178,9 +178,9 @@ def main():
     args = parser.parse_args()
     
     # Setup DDP
-    rank = args.local_rank
+    local_rank = args.local_rank
     world_size = int(os.environ['WORLD_SIZE'])
-    init_ddp(rank, world_size)
+    init_ddp(local_rank, world_size)
 
     # Wrap model with DDP
     model.to(rank)
