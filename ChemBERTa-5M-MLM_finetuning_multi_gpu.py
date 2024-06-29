@@ -94,7 +94,6 @@ test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_wor
 #test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
 
-
 def compute_metrics(p: EvalPrediction):
     if isinstance(p.predictions, np.ndarray):
         p.predictions = torch.tensor(p.predictions, device=model.device)
@@ -154,6 +153,13 @@ class MyTrainer(Trainer):
             torch.cuda.empty_cache()
             print(torch.cuda.memory_summary())
         return predictions, label_ids, metrics
+
+    def training_step(self, model, inputs):
+        print(f"Inputs keys: {inputs.keys()}")  # Debugging: print keys of the inputs
+        print(f"Sample input_ids: {inputs['input_ids'][0]}")
+        print(f"Sample attention_mask: {inputs['attention_mask'][0]}")
+        return super().training_step(model, inputs)
+
 
 trainer = MyTrainer(
     model=model,
