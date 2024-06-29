@@ -85,27 +85,13 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 # DataLoaders with pin_memory and num_workers, using data_collator
-#train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
-#val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
-#test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
+val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
 
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
-test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
-
-
-# Function to print batch details for debugging
-def debug_batch(batch):
-    print("Batch keys:", batch.keys())
-    for key, value in batch.items():
-        print(f"Key: {key}, Shape: {value.shape}")
-
-# Debug: Print details of the first batch in train_dataloader
-print("Debugging first batch in train_dataloader:")
-for batch in train_dataloader:
-    debug_batch(batch)
-    break  # Process only the first batch for debugging
-
+#train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
+#val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+#test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
 
 
@@ -173,8 +159,8 @@ trainer = MyTrainer(
     model=model,
     args=training_args,
     data_collator=data_collator,
-    train_dataset=train_dataloader,
-    eval_dataset=val_dataloader,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
     compute_metrics=compute_metrics
 )
 
