@@ -206,21 +206,21 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=compute_metrics,
-        train_dataloader=train_dataloader,  # Assuming you add this to MyTrainer
-        val_dataloader=val_dataloader 
+        compute_metrics=compute_metrics
     )
 
-    # Start training
     trainer.train()
+
+    # Evaluate on the test set after training
+    test_results = trainer.evaluate(test_dataset=test_dataset)
+    print(test_results)
 
     # Clear CUDA memory
     torch.cuda.empty_cache()
 
     # Evaluate on the test set after training
     #trainer.predict(test_dataset)
-    results = trainer.evaluate(test_dataloader)
-    print(results)
+
 
     # Save the trained model and tokenizer
     if local_rank == 0:  # Save only on the main process
