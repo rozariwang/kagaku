@@ -13,13 +13,14 @@ import argparse
 
 # Set environment variable to handle memory fragmentation and illegal memory access issues
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # Initialize the DDP environment
-def init_ddp(rank, world_size):
-    dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
-    torch.cuda.set_device(rank)
+def init_ddp():
+    dist.init_process_group(backend='nccl')
+    local_rank = dist.get_rank()
+    torch.cuda.set_device(local_rank)
+    return local_rank
 
 # Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -87,8 +88,8 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 # Prepare function to set up the DataLoader with DistributedSampler
-def prepare(rank, world_size, dataset, batch_size=32, pin_memory=False, num_workers=0):
-    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False)
+def prepare(local_rank, dataset, batch_size=32, pin_memory=False, num_workers=0):
+    sampler = DistributedSampler(dataset, num_replicas=dist.get_world_size(), rank=local_rank, shuffle=True, drop_last=False)
     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, drop_last=False, shuffle=False, sampler=sampler, collate_fn=data_collator)
     return dataloader
 
@@ -183,13 +184,13 @@ def main():
     init_ddp(local_rank, world_size)
 
     # Wrap model with DDP
-    model.to(rank)
-    model = DDP(model, device_ids=[rank])
+    model.to(local_rank)
+    model = DDP(model, device_ids=[local_rank])
 
     # Prepare data loaders
-    train_dataloader = prepare(rank, world_size, train_dataset, batch_size=16, pin_memory=True, num_workers=0)
-    val_dataloader = prepare(rank, world_size, val_dataset, batch_size=16, pin_memory=True, num_workers=0)
-    test_dataloader = prepare(rank, world_size, test_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    train_dataloader = prepare(local_rank, train_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    val_dataloader = prepare(local_rank, val_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    test_dataloader = prepare(local_rank, test_dataset, batch_size=16, pin_memory=True, num_workers=0)
 
     trainer = MyTrainer(
         model=model,
@@ -210,7 +211,7 @@ def main():
     trainer.predict(test_dataset)
 
     # Save the trained model and tokenizer
-    if rank == 0:  # Save only on the main process
+    if local_rank == 0:  # Save only on the main process
         model.module.save_pretrained("./trained_chemberta_10perc_data")
         tokenizer.save_pretrained("./trained_chemberta_10perc_data")
 
@@ -219,3 +220,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
