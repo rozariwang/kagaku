@@ -15,7 +15,7 @@ import numpy as np
 # For "CUDA error: an illegal memory access was encountered"
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-os.environ['CUDA_VISIBLE_DEVICES'] = '6, 7'
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3, 4, 5, 6, 7" 
 
 
 # Step 2: Load Tokenizer and Model
@@ -23,7 +23,7 @@ tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 # Step 4: Move Model to CUDA (if necessary)
-device = torch.device("cuda:6" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 model = nn.DataParallel(model, device_ids=[6,7])
