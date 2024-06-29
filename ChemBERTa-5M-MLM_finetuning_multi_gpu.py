@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, DistributedSampler
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction
 import math
 from sklearn.model_selection import train_test_split
@@ -85,13 +85,24 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 # DataLoaders with pin_memory and num_workers, using data_collator
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
-test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
 
 #train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
 #val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 #test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+
+# Function to prepare data loaders with DistributedSampler
+def prepare_dataloader(dataset, batch_size=16, pin_memory=False, num_workers=0, shuffle=True):
+    sampler = DistributedSampler(dataset, shuffle=shuffle, drop_last=False)
+    dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, drop_last=False, shuffle=False, sampler=sampler)
+    return dataloader
+
+
+train_dataloader = prepare_dataloader(train_dataset, batch_size=16, pin_memory=True, num_workers=0, shuffle=True)
+val_dataloader = prepare_dataloader(val_dataset, batch_size=16, pin_memory=True, num_workers=0, shuffle=False)
+test_dataloader = prepare_dataloader(test_dataset, batch_size=16, pin_memory=True, num_workers=0, shuffle=False)
 
 
 def compute_metrics(p: EvalPrediction):
