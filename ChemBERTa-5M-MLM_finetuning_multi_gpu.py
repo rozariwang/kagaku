@@ -84,6 +84,17 @@ train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_wo
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
+# Function to print batch details for debugging
+def debug_batch(batch):
+    print("Batch keys:", batch.keys())
+    for key, value in batch.items():
+        print(f"Key: {key}, Shape: {value.shape}")
+
+# Debug: Print details of the first batch in train_dataloader
+print("Debugging first batch in train_dataloader:")
+for batch in train_dataloader:
+    debug_batch(batch)
+    break  # Process only the first batch for debugging
 
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
