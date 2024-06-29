@@ -8,29 +8,16 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-# Set the GPU to use
-#os.environ["CUDA_VISIBLE_DEVICES"] = "7" 
-# Set environment variable to handle memory fragmentation
-#os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
-# For "CUDA error: an illegal memory access was encountered"
-
+# Set environment variable to handle memory fragmentation and illegal memory access issues
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3, 4, 5, 6, 7" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 
-
-# Step 2: Load Tokenizer and Model
+# Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
-# Step 4: Move Model to CUDA (if necessary)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
-
+# Wrap model with DataParallel
 model = nn.DataParallel(model, device_ids=[6,7])
-print(f"Using device: {device}")
-
-# Print CUDA memory summary after moving model to GPU
-#print(torch.cuda.memory_summary())
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
@@ -61,10 +48,7 @@ print("Train data shapes:", {k: v.shape for k, v in encoded_train_data.items()})
 print("Validation data shapes:", {k: v.shape for k, v in encoded_val_data.items()})
 print("Test data shapes:", {k: v.shape for k, v in encoded_test_data.items()})
 
-# Debugging print
-# print("Encoded Data Sample:", encoded_train_data.keys(), {k: v.shape for k, v in encoded_train_data.items()})
-
-# since DataCollatorForLanguageModeling expects dictionaries
+# Custom Dataset Class
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
@@ -84,9 +68,7 @@ data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
 )
 
-
 def compute_metrics(p: EvalPrediction):
-    # Convert predictions and labels to tensors if they are numpy arrays
     if isinstance(p.predictions, np.ndarray):
         p.predictions = torch.tensor(p.predictions, device=model.device)
     if isinstance(p.label_ids, np.ndarray):
@@ -100,24 +82,23 @@ def compute_metrics(p: EvalPrediction):
     num_total = mask.sum().item()
     accuracy = num_correct / num_total
 
-    # Ensure predictions are reshaped correctly for the loss calculation
     loss = torch.nn.CrossEntropyLoss()(p.predictions.view(-1, model.config.vocab_size), p.label_ids.view(-1))
     perplexity = math.exp(loss.item())
 
     return {"accuracy": accuracy, "loss": loss.item(), "perplexity": perplexity}
 
 training_args = TrainingArguments(
-    output_dir='./results',              # Directory for saving output files
-    evaluation_strategy='epoch',         # Evaluation is done at the end of each epoch
-    save_strategy='epoch',               # Save model checkpoint at the end of each epoch
-    logging_dir='./logs',                # Directory for storing logs
-    logging_steps=10,                    # Log every 10 steps
-    learning_rate=4.249894798853819e-05, # Learning rate from the hyperparameter optimization
-    per_device_train_batch_size=16,      # Batch size from the hyperparameter optimization
+    output_dir='./results',
+    evaluation_strategy='epoch',
+    save_strategy='epoch',
+    logging_dir='./logs',
+    logging_steps=10,
+    learning_rate=4.249894798853819e-05,
+    per_device_train_batch_size=16,
     per_device_eval_batch_size=16,
-    weight_decay=0.05704196058538424,    # Weight decay from the hyperparameter optimization
-    num_train_epochs=20,                  # Number of training epochs from the hyperparameter optimization
-    report_to=None                       # Disable external reporting to keep training local
+    weight_decay=0.05704196058538424,
+    num_train_epochs=20,
+    report_to=None
 )
 
 # Define a function to print metrics at the end of each epoch
@@ -131,18 +112,16 @@ class MyTrainer(Trainer):
         super().on_epoch_end()
         output = self.evaluate()
         print_and_save_metrics(output)
-        #torch.cuda.empty_cache()
-        #print(torch.cuda.memory_summary())
 
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix: str = "eval"):
-        with torch.no_grad():  # Disable gradient computation
+        with torch.no_grad():
             output = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
             torch.cuda.empty_cache()
             print(torch.cuda.memory_summary())
         return output
     
     def predict(self, test_dataset):
-        with torch.no_grad():  # Disable gradient computation
+        with torch.no_grad():
             predictions, label_ids, metrics = super().predict(test_dataset)
             print_and_save_metrics(metrics, filename="final_test_metrics.txt")
             torch.cuda.empty_cache()
@@ -158,6 +137,10 @@ trainer = MyTrainer(
     compute_metrics=compute_metrics
 )
 
+# DataLoader with pin_memory and num_workers
+train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, shuffle=True, num_workers=4, pin_memory=True)
+val_dataloader = DataLoader(val_dataset, batch_size=training_args.per_device_eval_batch_size, shuffle=False, num_workers=4, pin_memory=True)
+test_dataloader = DataLoader(test_dataset, batch_size=training_args.per_device_eval_batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
 # Start training
 trainer.train()
@@ -169,9 +152,5 @@ torch.cuda.empty_cache()
 trainer.predict(test_dataset)
 
 # Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta_10perc_data")
+model.module.save_pretrained("./trained_chemberta_10perc_data")
 tokenizer.save_pretrained("./trained_chemberta_10perc_data")
-
-# When usin DataParallelism
-# model.module.save_pretrained("./trained_chemberta_half_data")
-
