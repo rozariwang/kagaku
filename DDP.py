@@ -16,11 +16,10 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # Initialize the DDP environment
-def init_ddp():
+def init_ddp(local_rank):
     dist.init_process_group(backend='nccl')
-    local_rank = dist.get_rank()
-    world_size = dist.get_world_size()
     torch.cuda.set_device(local_rank)
+    world_size = dist.get_world_size()
     return local_rank, world_size
 
 # Load Tokenizer and Model
@@ -180,7 +179,7 @@ def main():
     args = parser.parse_args()
     
     # Setup DDP
-    local_rank, world_size = init_ddp()
+    local_rank, world_size = init_ddp(args.local_rank)
 
     # Wrap model with DDP
     model.to(local_rank)
@@ -219,5 +218,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
