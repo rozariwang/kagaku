@@ -84,11 +84,11 @@ train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_wo
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
-'''
+
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
 )
-'''
+
 
 def compute_metrics(p: EvalPrediction):
     if isinstance(p.predictions, np.ndarray):
@@ -153,6 +153,7 @@ class MyTrainer(Trainer):
 trainer = MyTrainer(
     model=model,
     args=training_args,
+    data_collator=data_collator,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     compute_metrics=compute_metrics
