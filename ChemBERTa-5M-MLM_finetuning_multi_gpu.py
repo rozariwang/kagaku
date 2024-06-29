@@ -79,6 +79,10 @@ train_dataset = CustomDataset(encoded_train_data)
 val_dataset = CustomDataset(encoded_val_data)
 test_dataset = CustomDataset(encoded_test_data)
 
+data_collator = DataCollatorForLanguageModeling(
+    tokenizer=tokenizer, mlm=True, mlm_probability=0.15
+)
+
 # DataLoaders with pin_memory and num_workers, using data_collator
 train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
@@ -96,9 +100,7 @@ for batch in train_dataloader:
     debug_batch(batch)
     break  # Process only the first batch for debugging
 
-data_collator = DataCollatorForLanguageModeling(
-    tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-)
+
 
 
 def compute_metrics(p: EvalPrediction):
