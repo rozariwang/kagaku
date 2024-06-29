@@ -102,7 +102,7 @@ def compute_metrics(p: EvalPrediction):
 
 training_args = TrainingArguments(
     output_dir='./results',
-    evaluation_strategy='epoch',
+    eval_strategy='epoch',
     save_strategy='epoch',
     logging_dir='./logs',
     logging_steps=10,
