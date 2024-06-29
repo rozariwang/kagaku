@@ -79,10 +79,10 @@ train_dataset = CustomDataset(encoded_train_data)
 val_dataset = CustomDataset(encoded_val_data)
 test_dataset = CustomDataset(encoded_test_data)
 
-# DataLoaders with pin_memory and num_workers
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
-test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+# DataLoaders with pin_memory and num_workers, using data_collator
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
+val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
 
 # Function to print batch details for debugging
 def debug_batch(batch):
@@ -164,9 +164,8 @@ class MyTrainer(Trainer):
 trainer = MyTrainer(
     model=model,
     args=training_args,
-    data_collator=data_collator,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
+    train_dataset=train_dataloader,
+    eval_dataset=val_dataloader,
     compute_metrics=compute_metrics
 )
 
