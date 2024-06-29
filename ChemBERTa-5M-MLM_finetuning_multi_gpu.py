@@ -134,6 +134,19 @@ def print_and_save_metrics(metrics, filename="training_metrics.txt"):
     print(metrics)
 
 class MyTrainer(Trainer):
+    def train(self, resume_from_checkpoint=None, trial=None, **kwargs):
+        # Get the train dataloader
+        train_dataloader = self.get_train_dataloader()
+        
+        # Print input_ids before processing the first batch
+        for batch in train_dataloader:
+            print(f"First batch input_ids: {batch['input_ids']}")
+            print(f"First batch attention_mask: {batch['attention_mask']}")
+            break  # Only print the first batch
+        
+        # Continue with the normal training process
+        super().train(resume_from_checkpoint, trial, **kwargs)
+    
     def on_epoch_end(self):
         super().on_epoch_end()
         output = self.evaluate()
@@ -159,6 +172,7 @@ class MyTrainer(Trainer):
         print(f"Sample input_ids: {inputs['input_ids'][0]}")
         print(f"Sample attention_mask: {inputs['attention_mask'][0]}")
         return super().training_step(model, inputs)
+
 
 
 trainer = MyTrainer(
