@@ -175,8 +175,17 @@ def print_and_save_metrics(metrics, filename="training_metrics.txt"):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local_rank", type=int, default=-1)
+    parser.add_argument("--local_rank", type=int, default=0)
+    parser.add_argument("--world_size", type=int, default=1)
+    parser.add_argument("--master_addr", type=str, default='127.0.0.1')
+    parser.add_argument("--master_port", type=str, default='29500')
     args = parser.parse_args()
+    
+    # Set environment variables if not already set
+    os.environ['RANK'] = str(args.local_rank)
+    os.environ['WORLD_SIZE'] = str(args.world_size)
+    os.environ['MASTER_ADDR'] = args.master_addr
+    os.environ['MASTER_PORT'] = args.master_port
     
     # Setup DDP
     local_rank, world_size = init_ddp(args.local_rank)
