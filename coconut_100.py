@@ -86,8 +86,8 @@ def compute_metrics(p: EvalPrediction):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 4.249894798853819e-05,
-    'num_train_epochs': 2,  # Change to 'None' or a large number to train until convergence
-    'per_device_train_batch_size': 16,
+    'num_train_epochs': 5,  # Change to 'None' or a large number to train until convergence
+    'per_device_train_batch_size': 4, #16
     'weight_decay': 0.05704196058538424
 }
 
@@ -103,6 +103,7 @@ training_args = TrainingArguments(
     learning_rate=best_hyperparameters["learning_rate"],
     num_train_epochs=best_hyperparameters["num_train_epochs"],  # Set a very high number to allow training until convergence
     per_device_train_batch_size=best_hyperparameters["per_device_train_batch_size"],
+    gradient_accumulation_steps=4,  # Accumulate gradients over 4 steps
     weight_decay=best_hyperparameters["weight_decay"],
     fp16=True,  # Mixed precision training
     report_to="wandb"  # Report metrics to W&B
@@ -131,7 +132,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./trained_chemberta"
+final_checkpoint_dir = "./trained_15_chemberta"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)
