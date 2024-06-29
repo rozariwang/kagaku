@@ -190,7 +190,8 @@ def main():
     # Setup DDP
     local_rank, world_size = init_ddp(args.local_rank)
 
-    # Wrap model with DDP
+    # Global model is moved to GPU and wrapped with DDP
+    global model
     model.to(local_rank)
     model = DDP(model, device_ids=[local_rank])
 
@@ -206,6 +207,8 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         compute_metrics=compute_metrics
+        train_dataloader=train_dataloader,  # Assuming you add this to MyTrainer
+        val_dataloader=val_dataloader 
     )
 
     # Start training
@@ -215,7 +218,9 @@ def main():
     torch.cuda.empty_cache()
 
     # Evaluate on the test set after training
-    trainer.predict(test_dataset)
+    #trainer.predict(test_dataset)
+    results = trainer.evaluate(test_dataloader)
+    print(results)
 
     # Save the trained model and tokenizer
     if local_rank == 0:  # Save only on the main process
