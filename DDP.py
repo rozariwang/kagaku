@@ -72,7 +72,7 @@ def prepare(rank, world_size, dataset, batch_size=32, pin_memory=False, num_work
     return dataloader
 
 # Define the training function
-def train_model(rank, world_size):
+def train_model(rank, world_size, hyperparameters):
     local_rank, world_size = init_ddp(rank)
     model.to(local_rank)
     model_ddp = DDP(model, device_ids=[local_rank])
