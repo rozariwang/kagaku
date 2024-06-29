@@ -19,8 +19,9 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 def init_ddp():
     dist.init_process_group(backend='nccl')
     local_rank = dist.get_rank()
+    world_size = dist.get_world_size()
     torch.cuda.set_device(local_rank)
-    return local_rank
+    return local_rank, world_size
 
 # Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -88,8 +89,8 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 # Prepare function to set up the DataLoader with DistributedSampler
-def prepare(local_rank, dataset, batch_size=32, pin_memory=False, num_workers=0):
-    sampler = DistributedSampler(dataset, num_replicas=dist.get_world_size(), rank=local_rank, shuffle=True, drop_last=False)
+def prepare(rank, world_size, dataset, batch_size=32, pin_memory=False, num_workers=0):
+    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False)
     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, drop_last=False, shuffle=False, sampler=sampler, collate_fn=data_collator)
     return dataloader
 
@@ -179,18 +180,16 @@ def main():
     args = parser.parse_args()
     
     # Setup DDP
-    local_rank = args.local_rank
-    world_size = int(os.environ['WORLD_SIZE'])
-    init_ddp(local_rank, world_size)
+    local_rank, world_size = init_ddp()
 
     # Wrap model with DDP
     model.to(local_rank)
     model = DDP(model, device_ids=[local_rank])
 
     # Prepare data loaders
-    train_dataloader = prepare(local_rank, train_dataset, batch_size=16, pin_memory=True, num_workers=0)
-    val_dataloader = prepare(local_rank, val_dataset, batch_size=16, pin_memory=True, num_workers=0)
-    test_dataloader = prepare(local_rank, test_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    train_dataloader = prepare(local_rank, world_size, train_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    val_dataloader = prepare(local_rank, world_size, val_dataset, batch_size=16, pin_memory=True, num_workers=0)
+    test_dataloader = prepare(local_rank, world_size, test_dataset, batch_size=16, pin_memory=True, num_workers=0)
 
     trainer = MyTrainer(
         model=model,
@@ -220,4 +219,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
