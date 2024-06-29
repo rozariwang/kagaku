@@ -17,7 +17,7 @@ tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 # Wrap model with DataParallel
-model = nn.DataParallel(model, device_ids=[0, 1, 2, 3, 4, 5, 6, 7])
+model = nn.DataParallel(model, device_ids=[6, 7])
 
 print(f"Using DataParallel with devices: {model.device_ids}")
 
