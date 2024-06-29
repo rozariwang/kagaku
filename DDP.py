@@ -206,7 +206,7 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics,
         train_dataloader=train_dataloader,  # Assuming you add this to MyTrainer
         val_dataloader=val_dataloader 
     )
