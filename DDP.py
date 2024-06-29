@@ -9,6 +9,7 @@ import math
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
+import argparse
 
 # Set environment variable to handle memory fragmentation and illegal memory access issues
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -172,8 +173,12 @@ def print_and_save_metrics(metrics, filename="training_metrics.txt"):
     print(metrics)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--local_rank", type=int, default=-1)
+    args = parser.parse_args()
+    
     # Setup DDP
-    rank = int(os.environ['RANK'])
+    rank = args.local_rank
     world_size = int(os.environ['WORLD_SIZE'])
     init_ddp(rank, world_size)
 
