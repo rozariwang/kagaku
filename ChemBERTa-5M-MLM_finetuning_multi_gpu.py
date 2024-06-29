@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, TensorDataset
+from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction
 import math
 from sklearn.model_selection import train_test_split
@@ -17,7 +17,9 @@ tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 # Wrap model with DataParallel
-model = nn.DataParallel(model, device_ids=[6,7])
+model = nn.DataParallel(model, device_ids=[0, 1, 2, 3, 4, 5, 6, 7])
+
+print(f"Using DataParallel with devices: {model.device_ids}")
 
 # Load and prepare data
 with open('./Datasets/combined_nps.txt', 'r') as file:
@@ -35,13 +37,19 @@ data = data_df['smiles'].tolist()
 train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42)
 val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
 
+# Ensure proper encoding of the data
 def encode_smiles(smiles_list):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
 
-# Encode each data set
+# Encode each data set and ensure the inclusion of 'input_ids'
 encoded_train_data = encode_smiles(train_data)
 encoded_val_data = encode_smiles(val_data)
 encoded_test_data = encode_smiles(test_data)
+
+# Check if 'input_ids' are included in the encoded data
+assert 'input_ids' in encoded_train_data, "Encoded train data does not include 'input_ids'"
+assert 'input_ids' in encoded_val_data, "Encoded validation data does not include 'input_ids'"
+assert 'input_ids' in encoded_test_data, "Encoded test data does not include 'input_ids'"
 
 # Debug: Print shapes of encoded data
 print("Train data shapes:", {k: v.shape for k, v in encoded_train_data.items()})
@@ -63,6 +71,11 @@ class CustomDataset(torch.utils.data.Dataset):
 train_dataset = CustomDataset(encoded_train_data)
 val_dataset = CustomDataset(encoded_val_data)
 test_dataset = CustomDataset(encoded_test_data)
+
+# DataLoaders with pin_memory and num_workers
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
+val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
@@ -136,11 +149,6 @@ trainer = MyTrainer(
     eval_dataset=val_dataset,
     compute_metrics=compute_metrics
 )
-
-# DataLoader with pin_memory and num_workers
-train_dataloader = DataLoader(train_dataset, batch_size=training_args.per_device_train_batch_size, shuffle=True, num_workers=4, pin_memory=True)
-val_dataloader = DataLoader(val_dataset, batch_size=training_args.per_device_eval_batch_size, shuffle=False, num_workers=4, pin_memory=True)
-test_dataloader = DataLoader(test_dataset, batch_size=training_args.per_device_eval_batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
 # Start training
 trainer.train()
