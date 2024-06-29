@@ -32,7 +32,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
     data = [line.strip() for line in data]
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.15, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.10, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -132,7 +132,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./trained_15_chemberta"
+final_checkpoint_dir = "./trained_10_chemberta"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)
