@@ -32,7 +32,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
     data = [line.strip() for line in data]
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.1, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.25, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -86,7 +86,7 @@ def compute_metrics(p: EvalPrediction):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 4.249894798853819e-05,
-    'num_train_epochs': 5,  # Change to 'None' or a large number to train until convergence
+    'num_train_epochs': 2,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 16,
     'weight_decay': 0.05704196058538424
 }
@@ -98,7 +98,7 @@ training_args = TrainingArguments(
     save_strategy='epoch',
     logging_dir='./logs',
     logging_steps=100,
-    load_best_model_at_end=True,
+    load_best_model_at_end=False,
     metric_for_best_model='loss',
     learning_rate=best_hyperparameters["learning_rate"],
     num_train_epochs=best_hyperparameters["num_train_epochs"],  # Set a very high number to allow training until convergence
@@ -119,45 +119,20 @@ trainer = Trainer(
     compute_metrics=compute_metrics
 )
 
-# Accumulative evaluation
-def accumulative_eval(trainer, eval_dataset, batch_size):
-    eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size)
-    total_loss, total_correct, total_count = 0, 0, 0
-    model.eval()
-    with torch.no_grad():
-        for batch in eval_dataloader:
-            inputs = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**inputs)
-            logits = outputs.logits
-            loss = outputs.loss
-            labels = inputs['labels']
-            mask = labels != -100
-            preds = logits.argmax(-1)
-            correct = (preds[mask] == labels[mask]).sum().item()
-            count = mask.sum().item()
-            total_loss += loss.item() * count
-            total_correct += correct
-            total_count += count
-    avg_loss = total_loss / total_count
-    accuracy = total_correct / total_count
-    return {"eval_loss": avg_loss, "eval_accuracy": accuracy}
-
 # Start training
 trainer.train()
 
-# Custom evaluation to handle large datasets
-eval_results = accumulative_eval(trainer, val_dataset, best_hyperparameters["per_device_train_batch_size"])
-print("Evaluation Results:", eval_results)
-wandb.log(eval_results)
-
-# Evaluate on test dataset
-test_results = accumulative_eval(trainer, test_dataset, best_hyperparameters["per_device_train_batch_size"])
+# Normal evaluation for the test dataset
+test_results = trainer.evaluate(eval_dataset=test_dataset)
 print("Test Results:", test_results)
 wandb.log(test_results)
 
 # Finish the W&B run
 wandb.finish()
 
-# Save the trained model and tokenizer
-model.save_pretrained("./trained_chemberta")
-tokenizer.save_pretrained("./trained_chemberta")
+# Save the trained model and tokenizer explicitly at the end of training
+final_checkpoint_dir = "./trained_chemberta"
+os.makedirs(final_checkpoint_dir, exist_ok=True)
+trainer.model.save_pretrained(final_checkpoint_dir)
+tokenizer.save_pretrained(final_checkpoint_dir)
+print(f"Final model saved to {final_checkpoint_dir}")
