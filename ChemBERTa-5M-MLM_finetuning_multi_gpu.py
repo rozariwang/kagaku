@@ -51,6 +51,11 @@ assert 'input_ids' in encoded_train_data, "Encoded train data does not include '
 assert 'input_ids' in encoded_val_data, "Encoded validation data does not include 'input_ids'"
 assert 'input_ids' in encoded_test_data, "Encoded test data does not include 'input_ids'"
 
+# Debug: Print keys and shapes of encoded data
+print("Train data keys:", encoded_train_data.keys())
+print("Validation data keys:", encoded_val_data.keys())
+print("Test data keys:", encoded_test_data.keys())
+
 # Debug: Print shapes of encoded data
 print("Train data shapes:", {k: v.shape for k, v in encoded_train_data.items()})
 print("Validation data shapes:", {k: v.shape for k, v in encoded_val_data.items()})
@@ -65,7 +70,9 @@ class CustomDataset(torch.utils.data.Dataset):
         return len(self.encodings['input_ids'])
 
     def __getitem__(self, idx):
-        return {key: self.encodings[key][idx] for key in self.encodings}
+        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        return item
+
 
 # Creating the datasets with the custom dataset class
 train_dataset = CustomDataset(encoded_train_data)
@@ -77,9 +84,11 @@ train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_wo
 val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
 
+'''
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
 )
+'''
 
 def compute_metrics(p: EvalPrediction):
     if isinstance(p.predictions, np.ndarray):
@@ -144,7 +153,6 @@ class MyTrainer(Trainer):
 trainer = MyTrainer(
     model=model,
     args=training_args,
-    data_collator=data_collator,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     compute_metrics=compute_metrics
