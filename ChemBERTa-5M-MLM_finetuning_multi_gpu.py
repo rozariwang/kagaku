@@ -11,6 +11,7 @@ import numpy as np
 # Set environment variable to handle memory fragmentation and illegal memory access issues
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # Load Tokenizer and Model
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
@@ -84,9 +85,14 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 # DataLoaders with pin_memory and num_workers, using data_collator
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
-val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
-test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+#test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True, collate_fn=data_collator)
+
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
+val_dataloader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+
 
 # Function to print batch details for debugging
 def debug_batch(batch):
@@ -166,6 +172,7 @@ class MyTrainer(Trainer):
 trainer = MyTrainer(
     model=model,
     args=training_args,
+    data_collator=data_collator,
     train_dataset=train_dataloader,
     eval_dataset=val_dataloader,
     compute_metrics=compute_metrics
