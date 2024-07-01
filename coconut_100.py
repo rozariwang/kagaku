@@ -107,6 +107,7 @@ training_args = TrainingArguments(
     weight_decay=best_hyperparameters["weight_decay"],
     fp16=True,  # Mixed precision training
     report_to="wandb"  # Report metrics to W&B
+    eval_accumulation_steps=10
 )
 
 
