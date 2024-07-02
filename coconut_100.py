@@ -32,7 +32,7 @@ with open('./Datasets/combined_nps.txt', 'r') as file:
     data = [line.strip() for line in data]
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.20, random_state=42)  # Sampling a fraction for demonstration
+data_df = data_df.sample(frac=0.25, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
