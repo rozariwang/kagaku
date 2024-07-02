@@ -5,8 +5,8 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction, TrainerCallback
 import wandb
-import optuna
-import plotly.graph_objects as vis
+#import optuna
+#import plotly.graph_objects as vis
 
 # Expandable memory segments configuration for PyTorch
 # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
@@ -27,12 +27,12 @@ model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model.to(device)  # Move the model to the specified device
 
 # Load and prepare data
-with open('./Datasets/combined_nps.txt', 'r') as file:
+with open('./Datasets/train.txt', 'r') as file:
     data = file.readlines()
     data = [line.strip() for line in data]
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-data_df = data_df.sample(frac=0.25, random_state=42)  # Sampling a fraction for demonstration
+#data_df = data_df.sample(frac=1, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -53,8 +53,8 @@ class SMILESDataset(torch.utils.data.Dataset):
 encoded_data = encode_smiles(data)
 dataset = SMILESDataset(encoded_data)
 
-# Split data into train, eval, and test sets (80/10/10)
-train_idx, temp_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.2, random_state=42)
+# Split data into train, eval, and test sets (90/5/5)
+train_idx, temp_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.1, random_state=42)
 val_idx, test_idx = train_test_split(temp_idx, test_size=0.5, random_state=42)
 
 train_dataset = SMILESDataset({key: val[train_idx] for key, val in encoded_data.items()})
@@ -86,7 +86,7 @@ def compute_metrics(p: EvalPrediction):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 4.249894798853819e-05,
-    'num_train_epochs': 5,  # Change to 'None' or a large number to train until convergence
+    'num_train_epochs': 20,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 4, #16
     'weight_decay': 0.05704196058538424
 }
@@ -106,7 +106,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # Accumulate gradients over 4 steps
     weight_decay=best_hyperparameters["weight_decay"],
     fp16=True,  # Mixed precision training
-    report_to="wandb"  # Report metrics to W&B
+    report_to="wandb",  # Report metrics to W&B
     eval_accumulation_steps=10
 )
 
@@ -133,7 +133,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./trained_10_chemberta"
+final_checkpoint_dir = "./trained_full_chemberta"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)
