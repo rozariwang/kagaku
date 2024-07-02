@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python /nethome/hhwang/hhwang/kagaku/DDP.py
+python /nethome/hhwang/hhwang/kagaku/coconut_100.py
