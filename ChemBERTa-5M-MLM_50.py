@@ -36,19 +36,18 @@ class SMILESDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return {key: self.encodings[key][idx] for key in self.encodings}
 
-#data = pd.read_csv('./hhwang/kagaku/Datasets/train.txt', header=None, names=['smiles']) 
-data = pd.read_csv('./Datasets/train.txt', header=None, names=['smiles']) # for the interactive job
-data = data.sample(frac=0.001, random_state=42) # for the interactive job
+data = pd.read_csv('./hhwang/kagaku/Datasets/train.txt', header=None, names=['smiles']) 
+#data = pd.read_csv('./Datasets/train.txt', header=None, names=['smiles']) # for the interactive job
+data = data.sample(frac=0.5, random_state=42) # for the interactive job
 smiles_list = data['smiles'].tolist()
 encoded_data = encode_smiles(smiles_list)
 
 # Split data into train and validation sets (90/10)
 train_idx, val_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.1, random_state=42)
 # Load the test data 
-#test_data_df = pd.read_csv('./hhwang/kagaku/Datasets/test.txt', header=None, names=['smiles'])
-test_data_df = pd.read_csv('./Datasets/test.txt', header=None, names=['smiles']) # for the interactive job
-test_data_df = test_data_df.sample(frac=0.001, random_state=42) # for the interactive job & 50% & 25% data run
-#test_data_df = data_df.sample(frac=0.1) ##### Delete for the actual run
+test_data_df = pd.read_csv('./hhwang/kagaku/Datasets/test.txt', header=None, names=['smiles'])
+#test_data_df = pd.read_csv('./Datasets/test.txt', header=None, names=['smiles']) # for the interactive job
+#test_data_df = test_data_df.sample(frac=0.001, random_state=42) # for the interactive job & 50% & 25% data run
 test_smiles_list = test_data_df['smiles'].tolist()
 test_encoded_data = encode_smiles(test_smiles_list)
 
@@ -164,7 +163,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./finetuned_005_MLM_chemberta"
+final_checkpoint_dir = "./finetuned_50_MLM_chemberta"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)
