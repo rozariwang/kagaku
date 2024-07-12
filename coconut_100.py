@@ -13,6 +13,7 @@ import wandb
 
 # Set max_split_size_mb to avoid memory fragmentation
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+os.environ["WANDB_API_KEY"] = "ab94aac01d8489527f36831ac31eacae67c98286"
 
 # Initialize W&B
 wandb.init(project="chemberta-finetuning")
@@ -21,18 +22,30 @@ wandb.init(project="chemberta-finetuning")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# Load the tokenizer and model
+'''
+# Load ChemBERTa
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+'''
+
+# Load fine-tuned ChemBERTa 
+local_model_path = "hhwang/kagaku/trained_25_MLM_chemberta"
+tokenizer = AutoTokenizer.from_pretrained(local_model_path)
+model = AutoModelForMaskedLM.from_pretrained(local_model_path)
+
+
 model.to(device)  # Move the model to the specified device
 
+
+
+#test
 # Load and prepare data
-with open('./Datasets/train.txt', 'r') as file:
+with open('./hhwang/kagaku/Datasets/train25perc_2.txt', 'r') as file:
     data = file.readlines()
     data = [line.strip() for line in data]
 # Convert list to DataFrame to use sample method
 data_df = pd.DataFrame(data, columns=['smiles'])
-#data_df = data_df.sample(frac=1, random_state=42)  # Sampling a fraction for demonstration
+#data_df = data_df.sample(frac=0.2, random_state=42)  # Sampling a fraction for demonstration
 
 # Convert DataFrame back to list after sampling
 data = data_df['smiles'].tolist()
@@ -85,10 +98,10 @@ def compute_metrics(p: EvalPrediction):
 
 # Define the best hyperparameters from trial
 best_hyperparameters = {
-    'learning_rate': 4.249894798853819e-05,
-    'num_train_epochs': 20,  # Change to 'None' or a large number to train until convergence
+    'learning_rate': 2.759070997751884e-05,
+    'num_train_epochs': 5,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 4, #16
-    'weight_decay': 0.05704196058538424
+    'weight_decay': 0.06478239547856546
 }
 
 
@@ -107,7 +120,7 @@ training_args = TrainingArguments(
     weight_decay=best_hyperparameters["weight_decay"],
     fp16=True,  # Mixed precision training
     report_to="wandb",  # Report metrics to W&B
-    eval_accumulation_steps=10
+    eval_accumulation_steps=2
 )
 
 
@@ -133,7 +146,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./trained_full_chemberta"
+final_checkpoint_dir = "./trained_50_MLM_chemberta"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)

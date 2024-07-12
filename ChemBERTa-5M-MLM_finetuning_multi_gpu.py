@@ -23,7 +23,7 @@ model = nn.DataParallel(model, device_ids=[6, 7])
 print(f"Using DataParallel with devices: {model.device_ids}")
 
 # Load and prepare data
-with open('./Datasets/combined_nps.txt', 'r') as file:
+with open('./Datasets/train.txt', 'r') as file:
     data = file.readlines()
     data = [line.strip() for line in data]
 
