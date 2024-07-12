@@ -88,11 +88,23 @@ def preprocess_logits_for_metrics(logits, labels):
     return pred_ids  # Return only the predictions
 
 class TrainEvalMetricsCallback(TrainerCallback):
+    def __init__(self, trainer):
+        self.trainer = trainer
+
     def on_epoch_end(self, args, state, control, **kwargs):
         # Compute train accuracy
         train_results = self.trainer.evaluate(eval_dataset=self.trainer.train_dataset)
         print(f"Train Results: {train_results}")
-        wandb.log({"train_loss": train_results['eval_loss'], "train_accuracy": train_results['eval_accuracy']}, step=state.global_step)
+        wandb.log({"train_loss": train_results['eval_loss'], 
+                   "train_accuracy": train_results['eval_accuracy']}, 
+                  step=state.global_step)
+
+        # Compute evaluation accuracy
+        eval_results = self.trainer.evaluate(eval_dataset=self.trainer.eval_dataset)
+        print(f"Eval Results: {eval_results}")
+        wandb.log({"eval_loss": eval_results['eval_loss'], 
+                   "eval_accuracy": eval_results['eval_accuracy']}, 
+                  step=state.global_step)
 
 # Define the best hyperparameters from trial
 best_hyperparameters = {
@@ -131,10 +143,13 @@ trainer = Trainer(
     data_collator=data_collator,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    callbacks=[InputDebugCallback(), TrainEvalMetricsCallback()],
+    callbacks=[InputDebugCallback()],
     compute_metrics=compute_metrics, 
     preprocess_logits_for_metrics=preprocess_logits_for_metrics
 )
+
+metrics_callback = TrainEvalMetricsCallback(trainer)
+trainer.add_callback(metrics_callback)
 
 # Start training
 trainer.train()
