@@ -45,8 +45,8 @@ encoded_data = encode_smiles(smiles_list)
 # Split data into train and validation sets (90/10)
 train_idx, val_idx = train_test_split(range(len(encoded_data['input_ids'])), test_size=0.1, random_state=42)
 # Load the test data 
-#test_data_df = pd.read_csv('./hhwang/kagaku/Datasets/test.txt', header=None, names=['smiles'])
-test_data_df = pd.read_csv('./Datasets/test.txt', header=None, names=['smiles']) # for the interactive job
+test_data_df = pd.read_csv('./hhwang/kagaku/Datasets/test.txt', header=None, names=['smiles'])
+#test_data_df = pd.read_csv('./Datasets/test.txt', header=None, names=['smiles']) # for the interactive job
 #test_data_df = test_data_df.sample(frac=0.001, random_state=42) # for the interactive job & 50% & 25% data run
 test_smiles_list = test_data_df['smiles'].tolist()
 test_encoded_data = encode_smiles(test_smiles_list)
