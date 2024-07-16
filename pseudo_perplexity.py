@@ -16,6 +16,10 @@ def load_model_and_tokenizer(model_path):
     model = AutoModelForMaskedLM.from_pretrained(model_path)
     # Print model configuration
     print(model.config)
+    # Print weight shapes
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(f"Weight shape for {name}: {param.data.shape}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     return tokenizer, model
