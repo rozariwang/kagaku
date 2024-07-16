@@ -8,8 +8,14 @@ import math
 
 # Function to load the model and tokenizer
 def load_model_and_tokenizer(model_path):
+    # Load the tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForMaskedLM.from_pretrained(model_path)  # Changed to masked language model
+    # Print tokenizer configuration
+    print(tokenizer)
+    # Load the model
+    model = AutoModelForMaskedLM.from_pretrained(model_path)
+    # Print model configuration
+    print(model.config)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     return tokenizer, model
