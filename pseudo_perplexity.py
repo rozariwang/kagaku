@@ -78,8 +78,8 @@ def calculate_pppl(tokenized_data, model, tokenizer):
 
 # Main function
 def main():
-    model_paths = ["DeepChem/ChemBERTa-5M-MLM", "./hhwang/kagaku/finetuned_25_MLM_chemberta", "./hhwang/kagaku/finetuned_50_MLM_chemberta", "./hhwang/kagaku/finetuned_100_MLM_chemberta"]
-    datasets = ["./hhwang/kagaku/Datasets/test.txt", "./hhwang/kagaku/Datasets/pubchem_1k_smiles.txt", "./hhwang/kagaku/Datasets/tox21_cleaned.txt", "./hhwang/kagaku/Datasets/zinc_cleaned.txt"]
+    model_paths = ["DeepChem/ChemBERTa-5M-MLM", "./finetuned_25_MLM_chemberta", "./finetuned_50_MLM_chemberta", "./finetuned_100_MLM_chemberta"]
+    datasets = ["./Datasets/test.txt", "./Datasets/pubchem_1k_smiles.txt", "./Datasets/tox21_cleaned.txt", "./Datasets/zinc_cleaned.txt"]
 
     # Store the preprocessed data for each dataset
     preprocessed_data = {}
