@@ -30,7 +30,7 @@ RUN python3 -m pip install --upgrade pip
 ENV LANG C.UTF-8
 
 # Uninstall Apex if it is installed
-RUN pip show apex && pip uninstall -y apex || echo "Apex not installed"
+#RUN pip show apex && pip uninstall -y apex || echo "Apex not installed"
 
 # Install dependencies (this is not necessary when using an *external* mini conda environment)
 RUN python3 -m pip install \
