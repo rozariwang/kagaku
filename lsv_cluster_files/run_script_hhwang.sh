@@ -1,1 +1,1 @@
-python /nethome/hhwang/hhwang/kagaku/pseudo_perplexity.py
+python /nethome/hhwang/hhwang/kagaku/hyperparameter_search.py
