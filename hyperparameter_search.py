@@ -6,6 +6,11 @@ import torch
 import pandas as pd
 import safetensors
 
+import transformers
+print(transformers.__version__)
+print(torch.__version__)
+print(safetensors.__version__)
+
 # Load the tokenizer and model
 model_name = 'rozariwang/25_nps'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
