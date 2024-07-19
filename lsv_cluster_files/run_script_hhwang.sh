@@ -1,1 +1,1 @@
-python /nethome/hhwang/hhwang/kagaku/hyperparameter_search.py
+python /nethome/hhwang/hhwang/kagaku/finetune_on_bbbp.py

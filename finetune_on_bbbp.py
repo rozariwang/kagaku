@@ -1,18 +1,11 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, roc_auc_score
-import optuna
 import numpy as np
 import torch
 import pandas as pd
-import safetensors
-
-import transformers
-print(transformers.__version__)
-print(torch.__version__)
-print(safetensors.__version__)
 
 # Load the tokenizer and model
-model_name = 'rozariwang/25_nps'
+model_name = "DeepChem/ChemBERTa-5M-MLM"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
@@ -21,7 +14,7 @@ def tokenize(smiles_list):
     if not smiles_list:
         print("Received empty smiles list.")
         return {"input_ids": [], "attention_mask": []}
-    return tokenizer(smiles_list, padding=True, truncation=True, max_length=128)
+    return tokenizer(smiles_list, padding=True, truncation=True, max_length=512)
 
 train_df = pd.read_csv('./Downstream_tasks/bbbp_scaffold_train.csv')
 val_df = pd.read_csv('./Downstream_tasks/bbbp_scaffold_valid.csv')
@@ -64,38 +57,39 @@ def compute_metrics(p):
         'roc_auc': roc_auc
     }
 
-# Optuna objective function
-def objective(trial):
-    training_args = TrainingArguments(
-        output_dir='./results',
-        evaluation_strategy="epoch",
-        learning_rate=trial.suggest_loguniform('learning_rate', 1e-5, 5e-5),
-        per_device_train_batch_size=trial.suggest_categorical('per_device_train_batch_size', [8, 16, 32]),
-        num_train_epochs=trial.suggest_int('num_train_epochs', 3, 5),
-        warmup_steps=500,
-        weight_decay=0.01,
-        logging_dir='./logs',
-        logging_steps=10,
-    )
-    
-    trainer = Trainer(
-        model_init=lambda: AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2),
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
-        compute_metrics=compute_metrics
-    )
-    
-    trainer.train()
-    eval_results = trainer.evaluate()
-    
-    return eval_results["eval_f1"]
+# Training arguments with specified hyperparameters
+training_args = TrainingArguments(
+    output_dir='./results',
+    evaluation_strategy="epoch",
+    learning_rate=4.3072444502824424e-05,
+    per_device_train_batch_size=16,
+    num_train_epochs=5,
+    warmup_steps=500,
+    weight_decay=0.01,
+    logging_dir='./logs',
+    logging_steps=10,
+    save_strategy="epoch",
+    save_total_limit=1,
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_loss"
+)
 
-study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
-study.optimize(objective, n_trials=10)
+# Initialize the Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    compute_metrics=compute_metrics
+)
 
-print("Best trial:")
-trial = study.best_trial
-print(f"  Value: {trial.value}")
-for key, value in trial.params.items():
-    print(f"    {key}: {value}")
+# Train the model
+trainer.train()
+
+# Evaluate the model on the test dataset
+eval_results = trainer.evaluate(eval_dataset=test_dataset)
+
+print(f"Test Precision: {eval_results['eval_precision']}")
+print(f"Test Recall: {eval_results['eval_recall']}")
+print(f"Test F1-Score: {eval_results['eval_f1']}")
+print(f"Test ROC-AUC: {eval_results['eval_roc_auc']}")
