@@ -6,7 +6,7 @@
 FROM nvcr.io/nvidia/pytorch:22.02-py3
 
 # for LSV V100 server
-# FROM nvcr.io/nvidia/pytorch:21.07-py3
+#FROM nvcr.io/nvidia/pytorch:21.07-py3
 
 # Set path to CUDA
 ENV CUDA_HOME=/usr/local/cuda
@@ -33,9 +33,9 @@ ENV LANG C.UTF-8
 #RUN pip show apex && pip uninstall -y apex || echo "Apex not installed"
 
 # Install dependencies (this is not necessary when using an *external* mini conda environment)
-RUN pip install --no-cache-dir torch==2.3.1
-RUN pip install --no-cache-dir transformers==4.42.4
-RUN pip install --no-cache-dir accelerate wandb optuna pandas scikit-learn plotly matplotlib rdkit-pypi datasets safetensors==0.4.3 peft
+RUN pip install --no-cache-dir torch
+RUN pip install --no-cache-dir transformers
+RUN pip install --no-cache-dir accelerate wandb optuna pandas scikit-learn plotly matplotlib rdkit-pypi datasets safetensors peft
 
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
