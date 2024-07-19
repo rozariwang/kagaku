@@ -63,14 +63,14 @@ training_args = TrainingArguments(
     evaluation_strategy="epoch",
     learning_rate=4.3072444502824424e-05,
     per_device_train_batch_size=16,
-    num_train_epochs=20,
+    num_train_epochs=25,
     warmup_steps=500,
     weight_decay=0.01,
     logging_dir='./logs',
     logging_steps=10,
     save_strategy="epoch",
     save_total_limit=1,
-    load_best_model_at_end=True,
+    load_best_model_at_end=False,
     metric_for_best_model="eval_loss"
 )
 
