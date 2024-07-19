@@ -4,6 +4,7 @@ import optuna
 import numpy as np
 import torch
 import pandas as pd
+import safetensors
 
 # Load the tokenizer and model
 model_name = 'rozariwang/25_nps'
