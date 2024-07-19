@@ -33,7 +33,7 @@ ENV LANG C.UTF-8
 #RUN pip show apex && pip uninstall -y apex || echo "Apex not installed"
 
 # Install dependencies (this is not necessary when using an *external* mini conda environment)
-RUN pip install --no-cache-dir torch==2.3.1+cu121
+RUN pip install --no-cache-dir torch==2.3.1
 RUN pip install --no-cache-dir transformers==4.42.4
 RUN pip install --no-cache-dir accelerate wandb optuna pandas scikit-learn plotly matplotlib rdkit-pypi datasets safetensors==0.4.3 peft
 
