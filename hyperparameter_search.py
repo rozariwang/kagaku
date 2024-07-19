@@ -6,7 +6,7 @@ import torch
 import pandas as pd
 
 # Load the tokenizer and model
-model_name = 'DeepChem/ChemBERTa-5M-MLM'
+model_name = './finetuned_25_MLM_chemberta'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
