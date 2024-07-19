@@ -1,1 +1,1 @@
-python /nethome/hhwang/hhwang/kagaku/finetune_on_bbbp.py
+python /nethome/hhwang/hhwang/kagaku/LoRA_on_bbbp.py
