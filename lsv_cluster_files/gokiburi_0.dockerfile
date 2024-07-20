@@ -20,23 +20,21 @@ RUN apt update && \
     ca-certificates \
     vim \
     tmux && \
-    rm -rf /var/lib/apt/lists
+    rm -rf /var/lib/apt/lists/*
 
 # Update pip
-RUN SHA=ToUcHMe which python3
 RUN python3 -m pip install --upgrade pip
 
 # See http://bugs.python.org/issue19846
 ENV LANG C.UTF-8
 
 # Uninstall Apex if it is installed
-#RUN pip show apex && pip uninstall -y apex || echo "Apex not installed"
+RUN python3 -m pip show apex && python3 -m pip uninstall -y apex || echo "Apex not installed"
 
-# Install dependencies (this is not necessary when using an *external* mini conda environment)
-RUN pip install --no-cache-dir torch==1.9.1
+# Install dependencies
+RUN pip install --no-cache-dir torch
 RUN pip install --no-cache-dir transformers
 RUN pip install --no-cache-dir accelerate wandb optuna pandas scikit-learn plotly matplotlib rdkit-pypi datasets safetensors peft
-
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
