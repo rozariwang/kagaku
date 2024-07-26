@@ -108,7 +108,7 @@ class TrainEvalMetricsCallback(TrainerCallback):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 2.759070997751884e-05,
-    'num_train_epochs': 25,  # Change to 'None' or a large number to train until convergence
+    'num_train_epochs': 100,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 16, #16
     'weight_decay': 0.06478239547856546
 }
@@ -163,7 +163,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./finetuned_50_MLM_chemberta"
+final_checkpoint_dir = "./finetuned_50_MLM_chemberta_100_epochs"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)
