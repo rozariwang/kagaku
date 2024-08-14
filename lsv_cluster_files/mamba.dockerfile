@@ -43,7 +43,7 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     triton==2.2.0 \
-    causal_conv1d \
+    -U causal_conv1d \
     tqdm \
     einops \
     huggingface_hub
