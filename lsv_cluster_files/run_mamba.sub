@@ -3,7 +3,7 @@
 
 universe                = vanilla
 initialdir              = /nethome/hhwang/
-executable              = /nethome/hhwang/kagaku/lsv_cluster_files/run_mamba.sh
+executable              = /nethome/hhwang/hhwang/kagaku/lsv_cluster_files/run_mamba.sh
 output                  = /data/users/hhwang/logs/output_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
 error                   = /data/users/hhwang/logs/error_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
 log                     = /data/users/hhwang/logs/log_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
