@@ -12,15 +12,16 @@ FROM nvcr.io/nvidia/pytorch:22.02-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt update && \
-    apt install -y build-essential \
+RUN apt-get update && apt-get install -y \
+    build-essential \
     htop \
     gnupg \
     curl \
     ca-certificates \
     vim \
     tmux \
-    git && \
+    git \
+    ninja-build && \
     rm -rf /var/lib/apt/lists/*
 
 # Update pip
@@ -42,17 +43,23 @@ RUN python3 -m pip install \
     matplotlib \
     rdkit-pypi \
     datasets \
-    triton==2.2.0 \
     ninja  
 
-# Attempt to install causal_conv1d
-RUN python3 -m pip install causal_conv1d
-
-# Clone and install mamba
+# Ensure CUDA versions match between nvcc and PyTorch
+RUN echo "PyTorch CUDA version:" && python3 -c "import torch; print(torch.version.cuda)" \
+    && echo "nvcc CUDA version:" && nvcc --version
+    
+# Clone the specific version of causal_conv1d that is compatible
+RUN git clone https://github.com/Dao-AILab/causal-conv1d.git /app/causal-conv1d \
+    && cd /app/causal-conv1d \
+    && git checkout v1.0.2 \
+    && CAUSAL_CONV1D_FORCE_BUILD=TRUE python3 -m pip install .
+    
+# Clone and setup the Mamba repository
 RUN git clone https://github.com/state-spaces/mamba.git /app/mamba
 WORKDIR /app/mamba
 ENV MAMBA_FORCE_BUILD=TRUE
-RUN pip install .
+RUN python3 -m pip install .
 
 # Set main application directory
 WORKDIR /app
