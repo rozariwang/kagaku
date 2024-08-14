@@ -12,4 +12,4 @@
 source activate mamba
 
 # Run the Python script, adjust the path to where your script is located
-python /hhwang/kagaku/mamba_gridsearch.py
+python /kagaku/mamba_gridsearch.py
