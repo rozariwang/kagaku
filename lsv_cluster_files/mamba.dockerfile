@@ -26,10 +26,10 @@ RUN apt update && \
 # Update pip
 RUN python3 -m pip install --upgrade pip
 
-# See http://bugs.python.org/issue19846
+# Environment settings
 ENV LANG C.UTF-8
 
-# Install dependencies (this is not necessary when using an *external* mini conda environment)
+# Install core dependencies
 RUN python3 -m pip install \
     accelerate \
     wandb \
@@ -43,20 +43,19 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     triton==2.2.0 \
-    -U causal_conv1d \
-    tqdm \
-    einops \
-    huggingface_hub
+    ninja  
 
-# Clone and install the mamba repository
+# Attempt to install causal_conv1d
+RUN python3 -m pip install causal_conv1d
+
+# Clone and install mamba
 RUN git clone https://github.com/state-spaces/mamba.git /app/mamba
 WORKDIR /app/mamba
 ENV MAMBA_FORCE_BUILD=TRUE
 RUN pip install .
 
-# Return to the main app directory
+# Set main application directory
 WORKDIR /app
-
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
