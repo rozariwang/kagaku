@@ -1,6 +1,6 @@
 import sys
 # Correct the path to the cloned 'mamba' repository on your cluster
-sys.path.append('/hhwang/kagaku/mamba')
+# sys.path.append('/hhwang/kagaku/mamba')
 
 # Data Loading and Preprocessing
 import torch
@@ -135,7 +135,7 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
 
 
 
-data_file = "/hhwang/kagaku/Datasets/train25perc_1.txt"
+data_file = "./hhwang/kagaku/Datasets/train25perc_1.txt"
 tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 total_dataset = SMILESDataset(data_file, tokenizer, max_length=512)
@@ -196,7 +196,7 @@ for d_model in d_model_options:
 
 # Save results to DataFrame and then to CSV file
 results_df = pd.DataFrame(results)
-results_df.to_csv('grid_search_results.csv', index=False)
+results_df.to_csv('./grid_search_results.csv', index=False)
 print("Grid search complete. Results saved to 'grid_search_results.csv'.")
 
 # Output the DataFrame to review here as well
