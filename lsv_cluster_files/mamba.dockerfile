@@ -12,15 +12,21 @@ FROM nvcr.io/nvidia/pytorch:22.02-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt update && \
-    apt install -y build-essential \
+# Install additional system utilities and dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
     htop \
     gnupg \
     curl \
     ca-certificates \
     vim \
-    tmux && \
-    rm -rf /var/lib/apt/lists
+    tmux \
+    git \
+    cmake \
+    libjpeg-dev \
+    libpng-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Update pip
 RUN SHA=ToUcHMe which python3
