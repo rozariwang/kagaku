@@ -2,7 +2,7 @@
 # We are using NVIDIA NGC's PyTorch image here, see: https://ngc.nvidia.com/catalog/containers/nvidia:pytorch for latest version
 # See https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html#framework-matrix-2021 for installed python, pytorch, etc. versions
 
-# for LSV A100s server
+#for LSV A100s server
 FROM nvcr.io/nvidia/pytorch:22.02-py3
 
 # for LSV V100 server
@@ -12,19 +12,24 @@ FROM nvcr.io/nvidia/pytorch:22.02-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-RUN apt-get update && apt-get install -y \
-    build-essential \
+RUN apt update && \
+    apt install -y build-essential \
     htop \
     gnupg \
     curl \
     ca-certificates \
     vim \
-    tmux \
-    git \
-    ninja-build && \
-    rm -rf /var/lib/apt/lists/*
+    tmux && \
+    rm -rf /var/lib/apt/lists
 
-# Update pip and install Python packages
+# Update pip
+RUN SHA=ToUcHMe which python3
+RUN python3 -m pip install --upgrade pip
+
+# See http://bugs.python.org/issue19846
+ENV LANG C.UTF-8
+
+# Update pip and install Python packages using Python 3.10
 RUN python3 -m pip install --upgrade pip && \
     pip install \
     accelerate \
@@ -38,41 +43,9 @@ RUN python3 -m pip install --upgrade pip && \
     matplotlib \
     rdkit-pypi \
     datasets \
-    ninja
-
-# Set non-interactive frontend to avoid tzdata prompts
-ENV DEBIAN_FRONTEND noninteractive
-
-# Install tzdata non-interactively
-RUN apt-get update && apt-get install -y tzdata && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections && \
-    echo 'tzdata tzdata/Zones/Europe select Berlin' | debconf-set-selections
-
-# Reset debconf frontend
-ENV DEBIAN_FRONTEND newt
-
-# Download and install the specific wheel compatible with CUDA and Python versions in the image
-ADD https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl /tmp
-RUN pip install /tmp/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-
-# Ensure CUDA versions match between nvcc and PyTorch
-RUN echo "PyTorch CUDA version:" && python3 -c "import torch; print(torch.version.cuda)" \
-    && echo "nvcc CUDA version:" && nvcc --version
-    
-# Clone and setup the necessary repositories
-RUN git clone https://github.com/Dao-AILab/causal-conv1d.git /app/causal-conv1d \
-    && cd /app/causal-conv1d \
-    && git checkout v1.0.2 \
-    && CAUSAL_CONV1D_FORCE_BUILD=TRUE pip install .
-
-RUN git clone https://github.com/state-spaces/mamba.git /app/mamba
-WORKDIR /app/mamba
-ENV MAMBA_FORCE_BUILD=TRUE
-RUN pip install .
-
-# Set main application directory
-WORKDIR /app
+    ninja \
+    causal-conv1d \
+    mamba-ssm
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
