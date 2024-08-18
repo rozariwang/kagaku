@@ -45,9 +45,17 @@ RUN python3 -m pip install \
     datasets \
     ninja  
 
-# Download and install the mamba_ssm wheel
-RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl -O /tmp/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-RUN python3 -m pip install /tmp/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+# System updates and Python 3.10 installation
+RUN apt-get update && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get install -y python3.10 python3.10-venv python3.10-dev \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+    && python3.10 -m pip install --upgrade pip setuptools wheel
+
+# Download and install the specific wheel
+ADD https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl /tmp
+RUN python3.10 -m pip install /tmp/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 
 # Ensure CUDA versions match between nvcc and PyTorch
 RUN echo "PyTorch CUDA version:" && python3 -c "import torch; print(torch.version.cuda)" \
