@@ -45,6 +45,18 @@ RUN python3 -m pip install \
     datasets \
     ninja  
 
+    # Use noninteractive to avoid user prompts during package installations
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install packages
+RUN apt-get update && apt-get install -y \
+    python3.10 python3.10-venv python3.10-dev \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Reset debconf frontend
+ENV DEBIAN_FRONTEND newt
+
 # System updates and Python 3.10 installation
 RUN apt-get update && apt-get install -y software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa \
