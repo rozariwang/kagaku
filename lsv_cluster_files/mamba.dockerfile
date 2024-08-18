@@ -13,20 +13,18 @@ ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
 # Install additional system utilities and dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
+RUN apt update && \
+    apt install -y build-essential \
     htop \
     gnupg \
     curl \
     ca-certificates \
     vim \
-    tmux \
-    git \
-    cmake \
-    libjpeg-dev \
-    libpng-dev \
-    && rm -rf /var/lib/apt/lists/*
+    setuptools \
+    wheel \
+    Cython \
+    tmux && \
+    rm -rf /var/lib/apt/lists
 
 # Update pip
 RUN SHA=ToUcHMe which python3
