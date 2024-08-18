@@ -45,6 +45,10 @@ RUN python3 -m pip install \
     datasets \
     ninja  
 
+# Install the mamba_ssm pre-compiled wheel
+ADD https://github.com/state-spaces/mamba/releases/download/v2.1.0/mamba_ssm-2.1.0+cu118torch1.13cxx11abiFALSE-cp310-cp310-linux_x86_64.whl /tmp
+RUN python3 -m pip install /tmp/mamba_ssm-2.1.0+cu118torch1.13cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+
 # Ensure CUDA versions match between nvcc and PyTorch
 RUN echo "PyTorch CUDA version:" && python3 -c "import torch; print(torch.version.cuda)" \
     && echo "nvcc CUDA version:" && nvcc --version
