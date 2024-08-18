@@ -45,15 +45,17 @@ RUN python3 -m pip install \
     datasets \
     ninja  
 
-    # Use noninteractive to avoid user prompts during package installations
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install packages
 RUN apt-get update && apt-get install -y \
-    python3.10 python3.10-venv python3.10-dev \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
-
+    
+    # Preconfigure tzdata
+RUN echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections && \
+    echo 'tzdata tzdata/Zones/Europe select Berlin' | debconf-set-selections
+    
 # Reset debconf frontend
 ENV DEBIAN_FRONTEND newt
 
