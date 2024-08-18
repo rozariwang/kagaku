@@ -44,8 +44,7 @@ RUN python3 -m pip install --upgrade pip && \
     rdkit-pypi \
     datasets \
     ninja \
-    causal-conv1d \
-    mamba-ssm
+    mamba-ssm[causal-conv1d]
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
