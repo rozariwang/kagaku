@@ -3,7 +3,7 @@
 # See https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html#framework-matrix-2021 for installed python, pytorch, etc. versions
 
 # for LSV A100s server
-FROM nvcr.io/nvidia/pytorch:23.02-py3
+FROM nvcr.io/nvidia/pytorch:22.02-py3
 
 # for LSV V100 server
 #FROM nvcr.io/nvidia/pytorch:21.07-py3
