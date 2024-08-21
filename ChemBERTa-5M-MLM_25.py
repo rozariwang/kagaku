@@ -18,7 +18,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 # Load ChemBERTa
-tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+tokenizer = AutoTokenizer.from_pretrained("seyonec/PubChem10M_SMILES_BPE_450k")
 model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
 
 model.to(device)  # Move the model to the specified device
@@ -38,7 +38,7 @@ class SMILESDataset(torch.utils.data.Dataset):
 
 data = pd.read_csv('./hhwang/kagaku/Datasets/train.txt', header=None, names=['smiles']) 
 #data = pd.read_csv('./Datasets/train.txt', header=None, names=['smiles']) # for the interactive job
-data = data.sample(frac=0.25, random_state=42) # for the interactive job
+data = data.sample(frac=0.25, random_state=42) 
 smiles_list = data['smiles'].tolist()
 encoded_data = encode_smiles(smiles_list)
 
@@ -108,7 +108,7 @@ class TrainEvalMetricsCallback(TrainerCallback):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 2.759070997751884e-05,
-    'num_train_epochs': 100,  # Change to 'None' or a large number to train until convergence
+    'num_train_epochs': 50,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 16, #16
     'weight_decay': 0.06478239547856546
 }
@@ -163,7 +163,7 @@ wandb.log(test_results)
 wandb.finish()
 
 # Save the trained model and tokenizer explicitly at the end of training
-final_checkpoint_dir = "./finetuned_25_MLM_chemberta_100_epochs"
+final_checkpoint_dir = "./with_pubchem_BPE_tokenizer"
 os.makedirs(final_checkpoint_dir, exist_ok=True)
 trainer.model.save_pretrained(final_checkpoint_dir)
 tokenizer.save_pretrained(final_checkpoint_dir)

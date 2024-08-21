@@ -45,9 +45,6 @@ RUN python3 -m pip install --upgrade pip && \
     rdkit-pypi \
     datasets \
     ninja \
-    setuptools \
-    wheel \
-    Cython \
     mamba-ssm[causal-conv1d]
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
