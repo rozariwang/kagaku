@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction, TrainerCallback
+from transformers import AutoTokenizer, AutoConfig, AutoModelForMaskedLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling, EvalPrediction, TrainerCallback
 import wandb
 
 # Set max_split_size_mb to avoid memory fragmentation
@@ -19,9 +19,11 @@ print(f"Using device: {device}")
 
 # Load ChemBERTa
 tokenizer = AutoTokenizer.from_pretrained("seyonec/PubChem10M_SMILES_BPE_450k")
-model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-5M-MLM")
+config = AutoConfig.from_pretrained("DeepChem/ChemBERTa-5M-MLM", vocab_size=tokenizer.vocab_size)
+model = AutoModelForMaskedLM.from_config(config)
 
 model.to(device)  # Move the model to the specified device
+
 
 def encode_smiles(smiles_list):
     return tokenizer(smiles_list, add_special_tokens=True, truncation=True, max_length=512, padding="max_length", return_tensors="pt")
