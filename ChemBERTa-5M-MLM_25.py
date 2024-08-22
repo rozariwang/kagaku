@@ -110,7 +110,7 @@ class TrainEvalMetricsCallback(TrainerCallback):
 # Define the best hyperparameters from trial
 best_hyperparameters = {
     'learning_rate': 2.759070997751884e-05,
-    'num_train_epochs': 50,  # Change to 'None' or a large number to train until convergence
+    'num_train_epochs': 20,  # Change to 'None' or a large number to train until convergence
     'per_device_train_batch_size': 16, #16
     'weight_decay': 0.06478239547856546
 }
