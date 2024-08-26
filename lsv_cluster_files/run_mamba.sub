@@ -1,8 +1,9 @@
 # HTCondor submit description file
 # Everything with a leading # is a comment
 
-universe                = vanilla
-initialdir              = /nethome/hhwang/
+universe                = docker
+docker_image            = docker.lsv.uni-saarland.de/hhwang/kagaku:1
+initialdir              = /nethome/hhwang
 executable              = /nethome/hhwang/hhwang/kagaku/lsv_cluster_files/run_mamba.sh
 output                  = /data/users/hhwang/logs/output_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
 error                   = /data/users/hhwang/logs/error_$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log

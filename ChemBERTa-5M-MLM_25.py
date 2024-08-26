@@ -18,9 +18,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 # Load ChemBERTa
-tokenizer = AutoTokenizer.from_pretrained("seyonec/PubChem10M_SMILES_BPE_450k")
-config = AutoConfig.from_pretrained("DeepChem/ChemBERTa-5M-MLM", vocab_size=tokenizer.vocab_size)
-model = AutoModelForMaskedLM.from_config(config)
+tokenizer = AutoTokenizer.from_pretrained("DeepChem/ChemBERTa-77M-MTR")
+model = AutoModelForMaskedLM.from_pretrained("DeepChem/ChemBERTa-77M-MTR")
 
 model.to(device)  # Move the model to the specified device
 
