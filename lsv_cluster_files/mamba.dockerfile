@@ -33,8 +33,9 @@ RUN pip install --upgrade pip && \
     ninja && \
     pip install mamba-ssm[causal-conv1d]
 
-# Check CUDA installation
-RUN ls /usr/local/cuda/bin && nvcc --version && which nvcc
+# Create and run a Python script to check CUDA availability
+RUN echo "import torch\nprint('CUDA Available:', torch.cuda.is_available())\nif torch.cuda.is_available():\n    print('CUDA Device Count:', torch.cuda.device_count())\n    print('CUDA Device Name:', torch.cuda.get_device_name(0))" > /check_cuda.py
+RUN python /check_cuda.py
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
