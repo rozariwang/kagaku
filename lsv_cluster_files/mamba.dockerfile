@@ -20,17 +20,17 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip && \
     pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
     pip install \
-    accelerate \
-    wandb \
-    optuna \
-    pandas \
-    scikit-learn \
-    transformers \
-    plotly \
-    matplotlib \
-    rdkit-pypi \
-    datasets \
-    ninja && \
+    accelerate 
+    #wandb \
+    #optuna \
+    #pandas \
+    #scikit-learn \
+    #transformers \
+    #plotly \
+    #matplotlib \
+    #rdkit-pypi \
+    #datasets \
+    #ninja && \
     #pip install mamba-ssm[causal-conv1d]
 
 # Create and run a Python script to check CUDA availability
