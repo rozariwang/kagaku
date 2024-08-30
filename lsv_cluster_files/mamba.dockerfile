@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Explicitly install Python packages and check CUDA
-RUN pip install --upgrade pip && \
+RUN pip install --upgrade pip && 
     #pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
     #pip install \
     #accelerate \
