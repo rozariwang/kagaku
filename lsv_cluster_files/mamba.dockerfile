@@ -16,20 +16,21 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Explicitly install Python packages and check CUDA
-RUN python3 -m pip install \
-    torch \
-    accelerate \
-    wandb \
-    optuna \
-    pandas \
-    scikit-learn \
-    transformers \
-    plotly \
-    matplotlib \
-    rdkit-pypi \
-    datasets \
-    ninja && \
-    pip install mamba-ssm[causal-conv1d]
+
+#RUN python3 -m pip install \
+#    torch \
+#    accelerate \
+#    wandb \
+#    optuna \
+#    pandas \
+#    scikit-learn \
+#    transformers \
+#    plotly \
+#    matplotlib \
+#    rdkit-pypi \
+#    datasets \
+#    ninja && \
+#    pip install mamba-ssm[causal-conv1d]
 
 #check CUDA availability
 RUN printf "import torch\nprint('CUDA Available:', torch.cuda.is_available())\nif torch.cuda.is_available():\n    print('CUDA Device Count:', torch.cuda.device_count())\n    print('CUDA Device Name:', torch.cuda.get_device_name(0))\n" > /check_cuda.py
