@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y \
 
 # Explicitly install Python packages and check CUDA
 
-RUN python3 -m pip install 
-#\
-#    torch \
+RUN python3 -m pip install \
+    torch 
+    #\
 #    accelerate \
 #    wandb \
 #    optuna \
