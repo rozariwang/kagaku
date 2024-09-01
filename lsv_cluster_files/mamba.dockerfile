@@ -5,7 +5,6 @@ FROM nvcr.io/nvidia/pytorch:22.02-py3
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install additional programs
-# Install additional system utilities and dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     htop \
@@ -17,23 +16,22 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Explicitly install Python packages and check CUDA
-#RUN pip install --upgrade pip && 
-    #pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
-    #pip install \
-    #accelerate \
-    #wandb \
-    #optuna \
-    #pandas \
-    #scikit-learn \
-    #transformers \
-    #plotly \
-    #matplotlib \
-    #rdkit-pypi \
-    #datasets \
-    #ninja && \
-    #pip install mamba-ssm[causal-conv1d]
+RUN python3 -m pip install \
+    pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
+    accelerate \
+    wandb \
+    optuna \
+    pandas \
+    scikit-learn \
+    transformers \
+    plotly \
+    matplotlib \
+    rdkit-pypi \
+    datasets \
+    ninja && \
+    pip install mamba-ssm[causal-conv1d]
 
-# Create and run a Python script to check CUDA availability
+#check CUDA availability
 RUN printf "import torch\nprint('CUDA Available:', torch.cuda.is_available())\nif torch.cuda.is_available():\n    print('CUDA Device Count:', torch.cuda.device_count())\n    print('CUDA Device Name:', torch.cuda.get_device_name(0))\n" > /check_cuda.py
 RUN python /check_cuda.py
 
