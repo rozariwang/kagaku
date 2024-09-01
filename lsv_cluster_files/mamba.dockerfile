@@ -17,25 +17,24 @@ RUN apt-get update && apt-get install -y \
 
 # Explicitly install Python packages and check CUDA
 
-RUN python3 -m pip install \
-    torch 
-    #\
-#    accelerate \
-#    wandb \
-#    optuna \
-#    pandas \
-#    scikit-learn \
-#    transformers \
-#    plotly \
-#    matplotlib \
-#    rdkit-pypi \
-#    datasets \
-#    ninja && \
-#    pip install mamba-ssm[causal-conv1d]
+RUN python3 pip install torch
 
 #check CUDA availability
 RUN python3 -c "import torch; print('CUDA Available:', torch.cuda.is_available()); print('CUDA Device Count:', torch.cuda.device_count() if torch.cuda.is_available() else 'CUDA not available'); print('CUDA Device Name:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'No CUDA Devices Found')"
-RUN python /check_cuda.py
+
+RUN python3 -m pip install \
+    accelerate \
+    wandb \
+    optuna \
+    pandas \
+    scikit-learn \
+    transformers \
+    plotly \
+    matplotlib \
+    rdkit-pypi \
+    datasets \
+    ninja && \
+    pip install mamba-ssm[causal-conv1d]
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
