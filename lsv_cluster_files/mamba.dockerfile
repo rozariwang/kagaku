@@ -34,7 +34,7 @@ RUN python3 -m pip install \
 #    pip install mamba-ssm[causal-conv1d]
 
 #check CUDA availability
-RUN printf "import torch\nprint('CUDA Available:', torch.cuda.is_available())\nif torch.cuda.is_available():\n    print('CUDA Device Count:', torch.cuda.device_count())\n    print('CUDA Device Name:', torch.cuda.get_device_name(0))\n" > /check_cuda.py
+RUN python3 -c "import torch; print('CUDA Available:', torch.cuda.is_available()); if torch.cuda.is_available(): print('CUDA Device Count:', torch.cuda.device_count()); print('CUDA Device Name:', torch.cuda.get_device_name(0)) if torch.cuda.is_available() else 'No CUDA Devices Found'"
 RUN python /check_cuda.py
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
