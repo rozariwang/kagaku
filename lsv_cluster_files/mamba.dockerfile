@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 
 # Explicitly install Python packages and check CUDA
 RUN python3 -m pip install \
-    pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
+    torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html && \
     accelerate \
     wandb \
     optuna \
