@@ -29,7 +29,7 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     ninja && \
-    mamba-ssm[causal-conv1d]
+    pip install mamba-ssm[causal-conv1d]
 
 #check CUDA availability
 RUN printf "import torch\nprint('CUDA Available:', torch.cuda.is_available())\nif torch.cuda.is_available():\n    print('CUDA Device Count:', torch.cuda.device_count())\n    print('CUDA Device Name:', torch.cuda.get_device_name(0))\n" > /check_cuda.py
