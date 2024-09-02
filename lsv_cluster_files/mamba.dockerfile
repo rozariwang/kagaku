@@ -34,8 +34,9 @@ RUN python3 -m pip install \
     matplotlib \
     rdkit-pypi \
     datasets \
-    ninja \
-    causal-conv1d
+    ninja
+    # \
+    #causal-conv1d
 
 #RUN python3 -m pip install -v mamba-ssm
 
