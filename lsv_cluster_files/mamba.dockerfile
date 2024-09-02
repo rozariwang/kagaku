@@ -24,9 +24,6 @@ RUN python3 -c "import torch; print('CUDA Available:', torch.cuda.is_available()
 
 # Install Python dependencies
 RUN python3 -m pip install \
-    torch==1.10.0+cu113 \
-    torchvision==0.11.1+cu113 \
-    torchaudio==0.10.0+cu113 \
     accelerate \
     wandb \
     optuna \
@@ -37,7 +34,8 @@ RUN python3 -m pip install \
     matplotlib \
     rdkit-pypi \
     datasets \
-    ninja
+    ninja \
+    pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 
 # Attempt to install mamba-ssm, considering the FORCE_BUILD and SKIP_CUDA_BUILD
 ENV MAMBA_FORCE_BUILD=TRUE
