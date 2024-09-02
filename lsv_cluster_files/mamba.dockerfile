@@ -35,8 +35,9 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     ninja \
-    torch \
-    mamba-ssm[causal-conv1d]
+    torch 
+
+RUN python3 -m pip install -v mamba-ssm
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
