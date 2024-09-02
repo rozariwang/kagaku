@@ -35,11 +35,8 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     ninja \
-    pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
-
-# Attempt to install mamba-ssm, considering the FORCE_BUILD and SKIP_CUDA_BUILD
-ENV MAMBA_FORCE_BUILD=TRUE
-RUN python3 -m pip install mamba-ssm[causal-conv1d]
+    torch \
+    mamba-ssm[causal-conv1d]
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
