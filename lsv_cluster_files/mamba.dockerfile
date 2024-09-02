@@ -7,6 +7,7 @@ ENV CUDA_HOME=/usr/local/cuda
 # Install additional programs
 RUN apt-get update && apt-get install -y \
     build-essential \
+    git \
     htop \
     gnupg \
     curl \
@@ -16,7 +17,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Explicitly install Python packages and check CUDA
-
 RUN python3 -m pip install torch
 
 #check CUDA availability
@@ -35,9 +35,15 @@ RUN python3 -m pip install \
     rdkit-pypi \
     datasets \
     ninja \
-    torch 
+    causal-conv1d
 
-RUN python3 -m pip install -v mamba-ssm
+#RUN python3 -m pip install -v mamba-ssm
+
+# Clone the mamba repository
+RUN git clone https://github.com/state-spaces/mamba.git /opt/mamba
+
+# Install mamba from the cloned repository
+RUN cd /opt/mamba && pip install .
 
 # Specify a new user (USER_NAME and USER_UID are specified via --build-arg)
 ARG USER_UID
