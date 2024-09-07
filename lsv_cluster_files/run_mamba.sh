@@ -1,1 +1,1 @@
-python /nethome/hhwang/hhwang/kagaku/M2_BPE_full_data.py
+python /nethome/hhwang/hhwang/kagaku/torch_import.py
